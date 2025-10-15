@@ -67,21 +67,162 @@
             </svg>
         );
 
+        // Team Panel Component
+        function TeamPanel({
+            side,
+            team,
+            matchStarted,
+            manualEditMode,
+            onChangeName,
+            onChangeLogo,
+            onUpdateTimeouts,
+            onUpdateScore
+        }) {
+            const isLeft = side === 'left';
+            const alignClass = isLeft ? 'items-start' : 'items-end';
+            const textAlignClass = isLeft ? 'text-left' : 'text-right';
+            const flexOrderClass = isLeft ? '' : 'flex-row-reverse';
+
+            return (
+                <div className={`flex-1 ${team.theme.bgColor} ${team.theme.textColor} flex flex-col`}>
+                    {/* Header with Logo and Team Name */}
+                    <div className={`p-6 flex flex-col ${alignClass} gap-4`}>
+                        <div className={`flex items-center gap-4 w-full ${flexOrderClass}`}>
+                            {/* Logo */}
+                            <div
+                                className={matchStarted ? '' : 'cursor-pointer'}
+                                onClick={matchStarted ? undefined : () => onChangeLogo(side)}
+                            >
+                                {team.logo ? (
+                                    <img
+                                        src={team.logo}
+                                        alt={`${team.name} Logo`}
+                                        style={{ height: 'clamp(6rem, 15vh, 18rem)', width: 'clamp(6rem, 15vh, 18rem)' }}
+                                        className={`object-contain ${matchStarted ? '' : 'hover:opacity-70 transition'}`}
+                                    />
+                                ) : (
+                                    !matchStarted && (
+                                        <div
+                                            style={{ height: 'clamp(6rem, 15vh, 18rem)', width: 'clamp(6rem, 15vh, 18rem)' }}
+                                            className="border-2 border-dashed border-gray-400 rounded flex items-center justify-center hover:border-gray-600 transition"
+                                        >
+                                            <span style={{ fontSize: 'clamp(0.65rem, 0.8vw, 0.85rem)' }} className="text-gray-500">
+                                                + Logo
+                                            </span>
+                                        </div>
+                                    )
+                                )}
+                            </div>
+
+                            {/* Team Name */}
+                            <div className={`flex-1 ${textAlignClass}`}>
+                                <div
+                                    className="cursor-pointer hover:opacity-70 transition p-2 rounded"
+                                    onClick={() => onChangeName(side)}
+                                >
+                                    <h2 className="font-bold uppercase" style={{ fontSize: 'clamp(1.75rem, 3vw, 3.5rem)' }}>
+                                        {team.name}
+                                    </h2>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Timeouts below logo */}
+                        <div className="flex items-center gap-2">
+                            {manualEditMode && isLeft && (
+                                <button
+                                    onClick={() => onUpdateTimeouts(side, -1)}
+                                    className={`${team.theme.buttonBg} ${team.theme.buttonText} ${team.theme.buttonHover} w-12 h-12 rounded-full text-2xl font-bold transition`}
+                                >
+                                    -
+                                </button>
+                            )}
+                            <div
+                                className="cursor-pointer hover:opacity-70 transition text-center"
+                                onClick={() => onUpdateTimeouts(side, 1)}
+                            >
+                                <div className="font-bold text-4xl mb-2">TIMEOUT</div>
+                                <div className="font-bold text-6xl">{team.timeouts}</div>
+                            </div>
+                            {manualEditMode && !isLeft && (
+                                <button
+                                    onClick={() => onUpdateTimeouts(side, -1)}
+                                    className={`${team.theme.buttonBg} ${team.theme.buttonText} ${team.theme.buttonHover} w-12 h-12 rounded-full text-2xl font-bold transition`}
+                                >
+                                    -
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Score */}
+                    <div className="flex-1 flex items-center min-h-0 px-4">
+                        {isLeft && (
+                            <button
+                                onClick={() => onUpdateScore(side, -1)}
+                                className={`${team.theme.buttonBg} ${team.theme.buttonText} ${team.theme.buttonHover} w-20 h-20 rounded-full text-4xl font-bold transition flex-shrink-0`}
+                            >
+                                -
+                            </button>
+                        )}
+                        <div
+                            style={{ fontSize: 'min(45vw, 90vh)' }}
+                            className="font-bold cursor-pointer hover:opacity-70 transition leading-none flex-1 text-center"
+                            onClick={() => onUpdateScore(side, 1)}
+                        >
+                            {team.score}
+                        </div>
+                        {!isLeft && (
+                            <button
+                                onClick={() => onUpdateScore(side, -1)}
+                                className={`${team.theme.buttonBg} ${team.theme.buttonText} ${team.theme.buttonHover} w-20 h-20 rounded-full text-4xl font-bold transition flex-shrink-0`}
+                            >
+                                -
+                            </button>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
         function VolleyScoreboard() {
-            const [leftTeam, setLeftTeam] = useState({
+            // Storage version - increment when breaking changes occur
+            const STORAGE_VERSION = 2;
+
+            // Default team configurations
+            const DEFAULT_LEFT_TEAM = {
                 name: 'Arcella Volley',
                 score: 0,
                 sets: 0,
                 timeouts: 0,
-                logo: 'https://www.arcellavolley.it/file/2014/05/Loghi-in-alto_051.png'
-            });
+                logo: 'https://www.arcellavolley.it/file/2014/05/Loghi-in-alto_051.png',
+                theme: {
+                    bgColor: 'bg-black',
+                    textColor: 'text-white',
+                    buttonBg: 'bg-white',
+                    buttonText: 'text-black',
+                    buttonHover: 'hover:bg-gray-200'
+                }
+            };
 
-            const [rightTeam, setRightTeam] = useState({
+            const DEFAULT_RIGHT_TEAM = {
                 name: 'Squadra Ospite',
                 score: 0,
                 sets: 0,
                 timeouts: 0,
-                logo: ''
+                logo: '',
+                theme: {
+                    bgColor: 'bg-white',
+                    textColor: 'text-black',
+                    buttonBg: 'bg-black',
+                    buttonText: 'text-white',
+                    buttonHover: 'hover:bg-gray-800'
+                }
+            };
+
+            const [teamData, setTeamData] = useState({
+                left: DEFAULT_LEFT_TEAM,
+                right: DEFAULT_RIGHT_TEAM
             });
 
             const [setHistory, setSetHistory] = useState([]);
@@ -98,19 +239,17 @@
                 if (saved) {
                     try {
                         const data = JSON.parse(saved);
-                        setLeftTeam({
-                            name: data.leftTeam.name || 'Arcella Volley',
-                            score: data.leftTeam.score || 0,
-                            sets: data.leftTeam.sets || 0,
-                            timeouts: data.leftTeam.timeouts || 0,
-                            logo: data.leftTeam.logo !== undefined ? data.leftTeam.logo : (data.leftTeam.name === 'Arcella Volley' ? 'https://www.arcellavolley.it/file/2014/05/Loghi-in-alto_051.png' : '')
-                        });
-                        setRightTeam({
-                            name: data.rightTeam.name || 'Squadra Ospite',
-                            score: data.rightTeam.score || 0,
-                            sets: data.rightTeam.sets || 0,
-                            timeouts: data.rightTeam.timeouts || 0,
-                            logo: data.rightTeam.logo !== undefined ? data.rightTeam.logo : (data.rightTeam.name === 'Arcella Volley' ? 'https://www.arcellavolley.it/file/2014/05/Loghi-in-alto_051.png' : '')
+
+                        // Check version - if mismatch, ignore saved data
+                        if (data.version !== STORAGE_VERSION) {
+                            console.log('Storage version mismatch - using defaults');
+                            return;
+                        }
+
+                        // Load with defaults as fallback
+                        setTeamData({
+                            left: { ...DEFAULT_LEFT_TEAM, ...data.teamData.left },
+                            right: { ...DEFAULT_RIGHT_TEAM, ...data.teamData.right }
                         });
                         setSetHistory(data.setHistory || []);
                     } catch (e) {
@@ -122,78 +261,71 @@
             // Save to localStorage whenever state changes
             useEffect(() => {
                 const data = {
-                    leftTeam,
-                    rightTeam,
+                    version: STORAGE_VERSION,
+                    teamData,
                     setHistory
                 };
                 localStorage.setItem('volleyScoreboard', JSON.stringify(data));
-            }, [leftTeam, rightTeam, setHistory]);
+            }, [teamData, setHistory]);
 
             const updateScore = (team, delta) => {
-                if (team === 'left') {
-                    const newScore = Math.max(0, leftTeam.score + delta);
-                    setLeftTeam({ ...leftTeam, score: newScore });
-                } else {
-                    const newScore = Math.max(0, rightTeam.score + delta);
-                    setRightTeam({ ...rightTeam, score: newScore });
-                }
+                const newScore = Math.max(0, teamData[team].score + delta);
+                setTeamData({
+                    ...teamData,
+                    [team]: { ...teamData[team], score: newScore }
+                });
             };
 
             const updateSets = (team, delta) => {
-                if (team === 'left') {
-                    const newSets = Math.max(0, leftTeam.sets + delta);
-                    setLeftTeam({ ...leftTeam, sets: newSets });
-                } else {
-                    const newSets = Math.max(0, rightTeam.sets + delta);
-                    setRightTeam({ ...rightTeam, sets: newSets });
-                }
+                const newSets = Math.max(0, teamData[team].sets + delta);
+                setTeamData({
+                    ...teamData,
+                    [team]: { ...teamData[team], sets: newSets }
+                });
             };
 
             const updateTimeouts = (team, delta) => {
-                if (team === 'left') {
-                    const newTimeouts = Math.max(0, Math.min(maxTimeouts, leftTeam.timeouts + delta));
-                    setLeftTeam({ ...leftTeam, timeouts: newTimeouts });
-                } else {
-                    const newTimeouts = Math.max(0, Math.min(maxTimeouts, rightTeam.timeouts + delta));
-                    setRightTeam({ ...rightTeam, timeouts: newTimeouts });
-                }
+                const newTimeouts = Math.max(0, Math.min(maxTimeouts, teamData[team].timeouts + delta));
+                setTeamData({
+                    ...teamData,
+                    [team]: { ...teamData[team], timeouts: newTimeouts }
+                });
             };
 
             const changeName = (team) => {
-                const newName = prompt(`Inserisci il nome della squadra:`, team === 'left' ? leftTeam.name : rightTeam.name);
+                const newName = prompt(`Inserisci il nome della squadra:`, teamData[team].name);
                 if (newName && newName.trim()) {
-                    if (team === 'left') {
-                        setLeftTeam({ ...leftTeam, name: newName.trim() });
-                    } else {
-                        setRightTeam({ ...rightTeam, name: newName.trim() });
-                    }
+                    setTeamData({
+                        ...teamData,
+                        [team]: { ...teamData[team], name: newName.trim() }
+                    });
                 }
             };
 
             const changeLogo = (team) => {
-                const currentLogo = team === 'left' ? leftTeam.logo : rightTeam.logo;
-                const newLogo = prompt(`Inserisci l'URL del logo:`, currentLogo);
+                const newLogo = prompt(`Inserisci l'URL del logo:`, teamData[team].logo);
                 if (newLogo !== null) {
-                    if (team === 'left') {
-                        setLeftTeam({ ...leftTeam, logo: newLogo.trim() });
-                    } else {
-                        setRightTeam({ ...rightTeam, logo: newLogo.trim() });
-                    }
+                    setTeamData({
+                        ...teamData,
+                        [team]: { ...teamData[team], logo: newLogo.trim() }
+                    });
                 }
             };
 
             const switchSides = () => {
-                const tempTeam = { ...leftTeam };
-                setLeftTeam({ ...rightTeam });
-                setRightTeam({ ...tempTeam });
+                setTeamData({
+                    left: teamData.right,
+                    right: teamData.left
+                });
                 setMenuOpen(false);
             };
 
             const endSet = () => {
-                const winner = leftTeam.score > rightTeam.score ? 'left' : 'right';
-                const winnerName = winner === 'left' ? leftTeam.name : rightTeam.name;
+                const winner = teamData.left.score > teamData.right.score ? 'left' : 'right';
+                const loser = winner === 'left' ? 'right' : 'left';
+                const winnerName = teamData[winner].name;
 
-                if (leftTeam.score === rightTeam.score) {
+                if (teamData.left.score === teamData.right.score) {
                     alert('Il punteggio è pari! Non è possibile terminare il set.');
                     return;
                 }
@@ -201,30 +333,22 @@
                 setWinnerMessage(`${winnerName} ha vinto il set!`);
                 setShowConfetti(true);
 
-                // Save set history with team names to track which team won
+                // Save set history with team info and theme
                 setSetHistory([...setHistory, {
-                    leftScore: leftTeam.score,
-                    rightScore: rightTeam.score,
-                    leftTeamName: leftTeam.name,
-                    rightTeamName: rightTeam.name,
-                    winnerName: winnerName
+                    leftScore: teamData.left.score,
+                    rightScore: teamData.right.score,
+                    leftTeamName: teamData.left.name,
+                    rightTeamName: teamData.right.name,
+                    winnerName: winnerName,
+                    winnerTheme: teamData[winner].theme
                 }]);
 
                 setTimeout(() => {
-                    // Increment set count for winner, reset scores and timeouts for both teams
-                    if (winner === 'left') {
-                        const updatedLeftTeam = { ...leftTeam, sets: leftTeam.sets + 1, score: 0, timeouts: 0 };
-                        const updatedRightTeam = { ...rightTeam, score: 0, timeouts: 0 };
-                        // Switch sides
-                        setLeftTeam(updatedRightTeam);
-                        setRightTeam(updatedLeftTeam);
-                    } else {
-                        const updatedLeftTeam = { ...leftTeam, score: 0, timeouts: 0 };
-                        const updatedRightTeam = { ...rightTeam, sets: rightTeam.sets + 1, score: 0, timeouts: 0 };
-                        // Switch sides
-                        setLeftTeam(updatedRightTeam);
-                        setRightTeam(updatedLeftTeam);
-                    }
+                    // Increment set count for winner, reset scores and timeouts for both teams, then switch sides
+                    setTeamData({
+                        left: { ...teamData[loser], score: 0, timeouts: 0 },
+                        right: { ...teamData[winner], sets: teamData[winner].sets + 1, score: 0, timeouts: 0 }
+                    });
 
                     setTimeout(() => {
                         setShowConfetti(false);
@@ -237,27 +361,19 @@
 
             const resetSet = () => {
                 if (confirm('Sei sicuro di voler resettare il set corrente?')) {
-                    setLeftTeam({ ...leftTeam, score: 0, timeouts: 0 });
-                    setRightTeam({ ...rightTeam, score: 0, timeouts: 0 });
+                    setTeamData({
+                        left: { ...teamData.left, score: 0, timeouts: 0 },
+                        right: { ...teamData.right, score: 0, timeouts: 0 }
+                    });
                     setMenuOpen(false);
                 }
             };
 
             const resetMatch = () => {
                 if (confirm('Sei sicuro di voler resettare la partita?')) {
-                    setLeftTeam({
-                        name: 'Arcella Volley',
-                        score: 0,
-                        sets: 0,
-                        timeouts: 0,
-                        logo: 'https://www.arcellavolley.it/file/2014/05/Loghi-in-alto_051.png'
-                    });
-                    setRightTeam({
-                        name: 'Squadra Ospite',
-                        score: 0,
-                        sets: 0,
-                        timeouts: 0,
-                        logo: ''
+                    setTeamData({
+                        left: DEFAULT_LEFT_TEAM,
+                        right: DEFAULT_RIGHT_TEAM
                     });
                     setSetHistory([]);
                     setMenuOpen(false);
@@ -276,17 +392,10 @@
             };
 
             const getCurrentSet = () => {
-                return leftTeam.sets + rightTeam.sets + 1;
+                return teamData.left.sets + teamData.right.sets + 1;
             };
 
-            const matchStarted = leftTeam.score > 0 || rightTeam.score > 0 || leftTeam.sets > 0 || rightTeam.sets > 0;
-
-            // Determine which team is Arcella and set colors accordingly
-            const isLeftArcella = leftTeam.name === 'Arcella Volley';
-            const leftBgColor = isLeftArcella ? 'bg-black' : 'bg-white';
-            const leftTextColor = isLeftArcella ? 'text-white' : 'text-black';
-            const rightBgColor = isLeftArcella ? 'bg-white' : 'bg-black';
-            const rightTextColor = isLeftArcella ? 'text-black' : 'text-white';
+            const matchStarted = teamData.left.score > 0 || teamData.right.score > 0 || teamData.left.sets > 0 || teamData.right.sets > 0;
 
             return (
                 <div className="h-screen bg-black text-white flex flex-col relative overflow-hidden">
@@ -333,96 +442,25 @@
 
                     {/* Main Scoreboard */}
                     <div className="flex-1 flex min-h-0">
-                        {/* Left Team */}
-                        <div className={`flex-1 ${leftBgColor} ${leftTextColor} flex flex-col`}>
-                            {/* Header with Logo and Team Name */}
-                            <div className="p-6 flex flex-col items-start gap-4">
-                                <div className="flex items-center gap-4 w-full">
-                                    {/* Logo on Left */}
-                                    <div
-                                        className={matchStarted ? '' : 'cursor-pointer'}
-                                        onClick={matchStarted ? undefined : () => changeLogo('left')}
-                                    >
-                                        {leftTeam.logo ? (
-                                            <img
-                                                src={leftTeam.logo}
-                                                alt={`${leftTeam.name} Logo`}
-                                                style={{ height: 'clamp(6rem, 15vh, 18rem)', width: 'clamp(6rem, 15vh, 18rem)' }}
-                                                className={`object-contain ${matchStarted ? '' : 'hover:opacity-70 transition'}`}
-                                            />
-                                        ) : (
-                                            !matchStarted && (
-                                                <div
-                                                    style={{ height: 'clamp(6rem, 15vh, 18rem)', width: 'clamp(6rem, 15vh, 18rem)' }}
-                                                    className="border-2 border-dashed border-gray-400 rounded flex items-center justify-center hover:border-gray-600 transition"
-                                                >
-                                                    <span style={{ fontSize: 'clamp(0.65rem, 0.8vw, 0.85rem)' }} className="text-gray-500">
-                                                        + Logo
-                                                    </span>
-                                                </div>
-                                            )
-                                        )}
-                                    </div>
-
-                                    {/* Team Name */}
-                                    <div className="flex-1 text-left">
-                                        <div
-                                            className="cursor-pointer hover:opacity-70 transition p-2 rounded"
-                                            onClick={() => changeName('left')}
-                                        >
-                                            <h2 className="font-bold uppercase" style={{ fontSize: 'clamp(1.75rem, 3vw, 3.5rem)' }}>
-                                                {leftTeam.name}
-                                            </h2>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Timeouts below logo */}
-                                <div className="flex items-center gap-2">
-                                    {manualEditMode && (
-                                        <button
-                                            onClick={() => updateTimeouts('left', -1)}
-                                            className={`${isLeftArcella ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'} w-8 h-8 rounded-full text-lg font-bold transition`}
-                                        >
-                                            -
-                                        </button>
-                                    )}
-                                    <div
-                                        className="cursor-pointer hover:opacity-70 transition text-center"
-                                        onClick={() => updateTimeouts('left', 1)}
-                                    >
-                                        <div className="font-bold text-xl mb-1">TIMEOUT</div>
-                                        <div className="font-bold text-3xl">{leftTeam.timeouts}</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Score */}
-                            <div className="flex-1 flex items-center min-h-0 px-4">
-                                <button
-                                    onClick={() => updateScore('left', -1)}
-                                    className={`${isLeftArcella ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'} w-20 h-20 rounded-full text-4xl font-bold transition flex-shrink-0`}
-                                >
-                                    -
-                                </button>
-                                <div
-                                    style={{ fontSize: 'min(30vw, 60vh)' }}
-                                    className="font-bold cursor-pointer hover:opacity-70 transition leading-none flex-1 text-center"
-                                    onClick={() => updateScore('left', 1)}
-                                >
-                                    {leftTeam.score}
-                                </div>
-                            </div>
-                        </div>
+                        <TeamPanel
+                            side="left"
+                            team={teamData.left}
+                            matchStarted={matchStarted}
+                            manualEditMode={manualEditMode}
+                            onChangeName={changeName}
+                            onChangeLogo={changeLogo}
+                            onUpdateTimeouts={updateTimeouts}
+                            onUpdateScore={updateScore}
+                        />
 
                         {/* Center Divider with Menu and Current Set */}
                         <div className="w-40 bg-yellow-400 flex flex-col relative">
                             {/* Current Set Indicator - At Top */}
                             <div className="py-6 text-center border-b-2 border-black">
-                                <div className="text-black font-bold mb-1" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.5rem)' }}>
+                                <div className="text-black font-bold mb-2" style={{ fontSize: 'clamp(1.5rem, 2.25vw, 2.25rem)' }}>
                                     SET
                                 </div>
-                                <div className="text-black font-bold" style={{ fontSize: 'clamp(3rem, 5vw, 6rem)' }}>
+                                <div className="text-black font-bold" style={{ fontSize: 'clamp(4.5rem, 7.5vw, 9rem)' }}>
                                     {getCurrentSet()}
                                 </div>
                             </div>
@@ -430,30 +468,30 @@
                             {/* Sets Won Display */}
                             <div className="py-4 text-center border-b-2 border-black">
                                 <div className="text-black font-bold mb-2" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.5rem)' }}>
-                                    SETS
+                                    SET
                                 </div>
                                 <div className="flex justify-center items-center gap-4">
-                                    <div className="text-black font-bold text-5xl">{leftTeam.sets}</div>
+                                    <div className="text-black font-bold text-5xl">{teamData.left.sets}</div>
                                     <div className="text-black font-bold text-2xl">-</div>
-                                    <div className="text-black font-bold text-5xl">{rightTeam.sets}</div>
+                                    <div className="text-black font-bold text-5xl">{teamData.right.sets}</div>
                                 </div>
                             </div>
 
                             {/* Set History Bubbles - Vertically Stacked */}
                             <div className="flex-1 flex flex-col items-center justify-start py-4 overflow-y-auto">
                                 {setHistory.length > 0 && (
-                                    <div className="flex flex-col gap-3 w-full px-3">
+                                    <div className="flex flex-col gap-4 w-full px-4">
                                         {setHistory.map((set, index) => {
-                                            // Determine if Arcella won this set
-                                            const arcellaWon = set.winnerName === 'Arcella Volley';
-                                            const winnerColor = arcellaWon ? 'bg-black text-white' : 'bg-white text-black';
+                                            // Use the saved winner theme for color
+                                            const winnerTheme = set.winnerTheme || { bgColor: 'bg-black', textColor: 'text-white' };
+                                            const winnerColor = `${winnerTheme.bgColor} ${winnerTheme.textColor}`;
 
                                             // Determine scores based on CURRENT team positions
                                             // We need to find which historical score belongs to the current left/right team
                                             let currentLeftScore, currentRightScore;
 
                                             // Check if the current left team was on the left when this set was played
-                                            if (leftTeam.name === set.leftTeamName) {
+                                            if (teamData.left.name === set.leftTeamName) {
                                                 // No swap needed - current left was historical left
                                                 currentLeftScore = set.leftScore;
                                                 currentRightScore = set.rightScore;
@@ -466,12 +504,12 @@
                                             return (
                                                 <div
                                                     key={index}
-                                                    className={`${winnerColor} rounded-lg px-3 py-2 text-center`}
+                                                    className={`${winnerColor} rounded-lg px-4 py-3 text-center`}
                                                 >
-                                                    <div className="text-sm opacity-70 mb-1">
+                                                    <div className="text-lg opacity-70 mb-2">
                                                         Set {index + 1}
                                                     </div>
-                                                    <div className="font-bold text-lg">
+                                                    <div className="font-bold text-2xl">
                                                         {currentLeftScore}-{currentRightScore}
                                                     </div>
                                                 </div>
@@ -532,87 +570,16 @@
                             </div>
                         </div>
 
-                        {/* Right Team */}
-                        <div className={`flex-1 ${rightBgColor} ${rightTextColor} flex flex-col`}>
-                            {/* Header with Team Name and Logo */}
-                            <div className="p-6 flex flex-col items-end gap-4">
-                                <div className="flex items-center gap-4 w-full">
-                                    {/* Team Name */}
-                                    <div className="flex-1 text-right">
-                                        <div
-                                            className="cursor-pointer hover:opacity-70 transition p-2 rounded"
-                                            onClick={() => changeName('right')}
-                                        >
-                                            <h2 className="font-bold uppercase" style={{ fontSize: 'clamp(1.75rem, 3vw, 3.5rem)' }}>
-                                                {rightTeam.name}
-                                            </h2>
-                                        </div>
-                                    </div>
-
-                                    {/* Logo on Right */}
-                                    <div
-                                        className={matchStarted ? '' : 'cursor-pointer'}
-                                        onClick={matchStarted ? undefined : () => changeLogo('right')}
-                                    >
-                                        {rightTeam.logo ? (
-                                            <img
-                                                src={rightTeam.logo}
-                                                alt={`${rightTeam.name} Logo`}
-                                                style={{ height: 'clamp(6rem, 15vh, 18rem)', width: 'clamp(6rem, 15vh, 18rem)' }}
-                                                className={`object-contain ${matchStarted ? '' : 'hover:opacity-70 transition'}`}
-                                            />
-                                        ) : (
-                                            !matchStarted && (
-                                                <div
-                                                    style={{ height: 'clamp(6rem, 15vh, 18rem)', width: 'clamp(6rem, 15vh, 18rem)' }}
-                                                    className="border-2 border-dashed border-gray-600 rounded flex items-center justify-center hover:border-gray-400 transition"
-                                                >
-                                                    <span style={{ fontSize: 'clamp(0.65rem, 0.8vw, 0.85rem)' }} className="text-gray-400">
-                                                        + Logo
-                                                    </span>
-                                                </div>
-                                            )
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Timeouts below logo */}
-                                <div className="flex items-center gap-2">
-                                    <div
-                                        className="cursor-pointer hover:opacity-70 transition text-center"
-                                        onClick={() => updateTimeouts('right', 1)}
-                                    >
-                                        <div className="font-bold text-xl mb-1">TIMEOUT</div>
-                                        <div className="font-bold text-3xl">{rightTeam.timeouts}</div>
-                                    </div>
-                                    {manualEditMode && (
-                                        <button
-                                            onClick={() => updateTimeouts('right', -1)}
-                                            className={`${isLeftArcella ? 'bg-black text-white hover:bg-gray-800' : 'bg-white text-black hover:bg-gray-200'} w-8 h-8 rounded-full text-lg font-bold transition`}
-                                        >
-                                            -
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Score */}
-                            <div className="flex-1 flex items-center min-h-0 px-4">
-                                <div
-                                    style={{ fontSize: 'min(30vw, 60vh)' }}
-                                    className="font-bold cursor-pointer hover:opacity-70 transition leading-none flex-1 text-center"
-                                    onClick={() => updateScore('right', 1)}
-                                >
-                                    {rightTeam.score}
-                                </div>
-                                <button
-                                    onClick={() => updateScore('right', -1)}
-                                    className={`${isLeftArcella ? 'bg-black text-white hover:bg-gray-800' : 'bg-white text-black hover:bg-gray-200'} w-20 h-20 rounded-full text-4xl font-bold transition flex-shrink-0`}
-                                >
-                                    -
-                                </button>
-                            </div>
-                        </div>
+                        <TeamPanel
+                            side="right"
+                            team={teamData.right}
+                            matchStarted={matchStarted}
+                            manualEditMode={manualEditMode}
+                            onChangeName={changeName}
+                            onChangeLogo={changeLogo}
+                            onUpdateTimeouts={updateTimeouts}
+                            onUpdateScore={updateScore}
+                        />
                     </div>
                 </div>
             );
