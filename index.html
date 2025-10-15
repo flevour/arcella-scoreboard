@@ -67,6 +67,150 @@
             </svg>
         );
 
+        // Team Logo Component
+        const TeamLogo = ({ team, logo, onLogoClick, matchStarted }) => {
+            if (matchStarted) {
+                return (
+                    <div className="flex justify-center mt-4">
+                        {logo ? (
+                            <img
+                                src={logo}
+                                alt={`${team} Logo`}
+                                style={{ height: 'clamp(6rem, 12vh, 14rem)' }}
+                                className="object-contain"
+                            />
+                        ) : (
+                            <div style={{ height: 'clamp(6rem, 12vh, 14rem)', width: 'clamp(9rem, 18vh, 21rem)' }}></div>
+                        )}
+                    </div>
+                );
+            }
+
+            return (
+                <div className="flex justify-center mt-4 cursor-pointer" onClick={onLogoClick}>
+                    {logo ? (
+                        <img
+                            src={logo}
+                            alt={`${team} Logo`}
+                            style={{ height: 'clamp(6rem, 12vh, 14rem)' }}
+                            className="object-contain hover:opacity-70 transition"
+                        />
+                    ) : (
+                        <div
+                            style={{ height: 'clamp(6rem, 12vh, 14rem)', width: 'clamp(9rem, 18vh, 21rem)' }}
+                            className={`border-2 border-dashed rounded flex items-center justify-center hover:border-gray-600 transition ${
+                                team === 'left' ? 'border-gray-400' : 'border-gray-600'
+                            }`}
+                        >
+                            <span
+                                style={{ fontSize: 'clamp(0.75rem, 1vw, 1rem)' }}
+                                className={team === 'left' ? 'text-gray-500' : 'text-gray-400'}
+                            >
+                                + Aggiungi logo
+                            </span>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // Score Display Component
+        const ScoreDisplay = ({ score, onIncrement, onDecrement, textColor, buttonColors }) => (
+            <div className="flex-1 flex items-center justify-center overflow-hidden">
+                <div className="text-center w-full">
+                    <div
+                        style={{ fontSize: 'clamp(8rem, 18vw, 25rem)' }}
+                        className={`font-bold cursor-pointer transition leading-none ${textColor}`}
+                        onClick={onIncrement}
+                    >
+                        {score}
+                    </div>
+                    <div className="flex gap-4 justify-center mt-8">
+                        <button
+                            onClick={onDecrement}
+                            className={`${buttonColors.minus} w-20 h-20 rounded-full text-4xl font-bold transition`}
+                        >
+                            -
+                        </button>
+                        <button
+                            onClick={onIncrement}
+                            className="bg-yellow-400 text-black w-20 h-20 rounded-full text-4xl font-bold hover:bg-yellow-500 transition"
+                        >
+                            +
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+
+        // Stats Display Component (Sets and Timeouts)
+        const StatsDisplay = ({
+            sets,
+            timeouts,
+            maxTimeouts,
+            onSetChange,
+            onTimeoutChange,
+            manualEditMode,
+            colors
+        }) => (
+            <div className={`p-6 border-t-4 ${colors.border}`}>
+                <div className="flex justify-around text-center">
+                    <div>
+                        <div className={`font-semibold mb-2 ${colors.label}`} style={{ fontSize: 'clamp(0.75rem, 1vw, 1rem)' }}>
+                            SET VINTI
+                        </div>
+                        {manualEditMode ? (
+                            <div className="flex items-center gap-2 justify-center">
+                                <button
+                                    onClick={() => onSetChange(-1)}
+                                    className={`${colors.minusBtn} rounded-full font-bold transition`}
+                                    style={{ width: 'clamp(2rem, 3vw, 3rem)', height: 'clamp(2rem, 3vw, 3rem)', fontSize: 'clamp(1rem, 1.5vw, 1.5rem)' }}
+                                >
+                                    -
+                                </button>
+                                <div className="font-bold" style={{ fontSize: 'clamp(1.5rem, 2.5vw, 3rem)', minWidth: 'clamp(3rem, 4vw, 4rem)' }}>
+                                    {sets}
+                                </div>
+                                <button
+                                    onClick={() => onSetChange(1)}
+                                    className="bg-yellow-400 text-black rounded-full font-bold hover:bg-yellow-500 transition"
+                                    style={{ width: 'clamp(2rem, 3vw, 3rem)', height: 'clamp(2rem, 3vw, 3rem)', fontSize: 'clamp(1rem, 1.5vw, 1.5rem)' }}
+                                >
+                                    +
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="font-bold" style={{ fontSize: 'clamp(1.5rem, 2.5vw, 3rem)' }}>{sets}</div>
+                        )}
+                    </div>
+                    <div>
+                        <div className={`font-semibold mb-2 ${colors.label}`} style={{ fontSize: 'clamp(0.75rem, 1vw, 1rem)' }}>
+                            TIMEOUT
+                        </div>
+                        <div className="flex items-center gap-2 justify-center">
+                            <button
+                                onClick={() => onTimeoutChange(-1)}
+                                className={`${colors.minusBtn} rounded-full font-bold transition`}
+                                style={{ width: 'clamp(2rem, 3vw, 3rem)', height: 'clamp(2rem, 3vw, 3rem)', fontSize: 'clamp(1rem, 1.5vw, 1.5rem)' }}
+                            >
+                                -
+                            </button>
+                            <div className="font-bold" style={{ fontSize: 'clamp(1.5rem, 2.5vw, 3rem)', minWidth: 'clamp(3rem, 4vw, 4rem)' }}>
+                                {timeouts}/{maxTimeouts}
+                            </div>
+                            <button
+                                onClick={() => onTimeoutChange(1)}
+                                className="bg-yellow-400 text-black rounded-full font-bold hover:bg-yellow-500 transition"
+                                style={{ width: 'clamp(2rem, 3vw, 3rem)', height: 'clamp(2rem, 3vw, 3rem)', fontSize: 'clamp(1rem, 1.5vw, 1.5rem)' }}
+                            >
+                                +
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
         function VolleyScoreboard() {
             const [leftTeam, setLeftTeam] = useState({
                 name: 'Arcella Volley',
