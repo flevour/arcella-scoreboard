@@ -29,6 +29,72 @@
             -ms-user-select: none;
             user-select: none;
         }
+
+        /* Team Panel Styles */
+        .team-panel {
+            width: calc((100vw - 10rem) / 2);
+        }
+
+        /* Logo Styles */
+        .logo-size {
+            height: clamp(6rem, 15vh, 18rem);
+            width: clamp(6rem, 15vh, 18rem);
+        }
+
+        .logo-placeholder-text {
+            font-size: clamp(0.65rem, 0.8vw, 0.85rem);
+        }
+
+        /* Team Name */
+        .team-name {
+            font-size: clamp(1.75rem, 3vw, 3.5rem);
+        }
+
+        /* Timeout Styles */
+        .timeout-label {
+            font-size: 2.25rem; /* text-4xl */
+        }
+
+        .timeout-number {
+            font-size: 3.75rem; /* text-6xl */
+        }
+
+        /* Score Styles */
+        .score-display {
+            font-size: min(45vw, 60vh);
+        }
+
+        /* Top Bar Styles */
+        .venue-text {
+            font-size: clamp(1rem, 1.5vw, 1.5rem);
+        }
+
+        .date-text {
+            font-size: clamp(0.875rem, 1.2vw, 1.25rem);
+        }
+
+        /* Current Set Styles */
+        .current-set-label {
+            font-size: clamp(1.5rem, 2.25vw, 2.25rem);
+        }
+
+        .current-set-number {
+            font-size: clamp(4.5rem, 7.5vw, 9rem);
+        }
+
+        /* Sets Won Styles */
+        .sets-label {
+            font-size: clamp(1rem, 1.5vw, 1.5rem);
+        }
+
+        .sets-number {
+            font-size: clamp(3rem, 5vw, 5rem);
+        }
+
+        /* Winner Message */
+        .winner-message {
+            font-size: clamp(3rem, 6vw, 6rem);
+        }
     </style>
 </head>
 <body>
@@ -84,7 +150,7 @@
             const flexOrderClass = isLeft ? '' : 'flex-row-reverse';
 
             return (
-                <div className={`flex-1 ${team.theme.bgColor} ${team.theme.textColor} flex flex-col`}>
+                <div className={`team-panel flex-shrink-0 ${team.theme.bgColor} ${team.theme.textColor} flex flex-col`}>
                     {/* Header with Logo and Team Name */}
                     <div className={`p-6 flex flex-col ${alignClass} gap-4`}>
                         <div className={`flex items-center gap-4 w-full ${flexOrderClass}`}>
@@ -97,16 +163,12 @@
                                     <img
                                         src={team.logo}
                                         alt={`${team.name} Logo`}
-                                        style={{ height: 'clamp(6rem, 15vh, 18rem)', width: 'clamp(6rem, 15vh, 18rem)' }}
-                                        className={`object-contain ${matchStarted ? '' : 'hover:opacity-70 transition'}`}
+                                        className={`logo-size object-contain ${matchStarted ? '' : 'hover:opacity-70 transition'}`}
                                     />
                                 ) : (
                                     !matchStarted && (
-                                        <div
-                                            style={{ height: 'clamp(6rem, 15vh, 18rem)', width: 'clamp(6rem, 15vh, 18rem)' }}
-                                            className="border-2 border-dashed border-gray-400 rounded flex items-center justify-center hover:border-gray-600 transition"
-                                        >
-                                            <span style={{ fontSize: 'clamp(0.65rem, 0.8vw, 0.85rem)' }} className="text-gray-500">
+                                        <div className="logo-size border-2 border-dashed border-gray-400 rounded flex items-center justify-center hover:border-gray-600 transition">
+                                            <span className="logo-placeholder-text text-gray-500">
                                                 + Logo
                                             </span>
                                         </div>
@@ -120,7 +182,7 @@
                                     className="cursor-pointer hover:opacity-70 transition p-2 rounded"
                                     onClick={() => onChangeName(side)}
                                 >
-                                    <h2 className="font-bold uppercase" style={{ fontSize: 'clamp(1.75rem, 3vw, 3.5rem)' }}>
+                                    <h2 className="team-name font-bold uppercase">
                                         {team.name}
                                     </h2>
                                 </div>
@@ -141,8 +203,8 @@
                                 className="cursor-pointer hover:opacity-70 transition text-center"
                                 onClick={() => onUpdateTimeouts(side, 1)}
                             >
-                                <div className="font-bold text-4xl mb-2">TIMEOUT</div>
-                                <div className="font-bold text-6xl">{team.timeouts}</div>
+                                <div className="timeout-label font-bold mb-2">TIMEOUT</div>
+                                <div className="timeout-number font-bold">{team.timeouts}</div>
                             </div>
                             {manualEditMode && !isLeft && (
                                 <button
@@ -166,8 +228,7 @@
                             </button>
                         )}
                         <div
-                            style={{ fontSize: 'min(45vw, 90vh)' }}
-                            className="font-bold cursor-pointer hover:opacity-70 transition leading-none flex-1 text-center"
+                            className="score-display font-bold cursor-pointer hover:opacity-70 transition leading-none flex-1 text-center"
                             onClick={() => onUpdateScore(side, 1)}
                         >
                             {team.score}
@@ -403,7 +464,7 @@
                     {showConfetti && (
                         <div className="fixed inset-0 z-50 pointer-events-none overflow-hidden">
                             <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                                <div className="text-6xl font-bold text-yellow-400 animate-pulse">
+                                <div className="winner-message font-bold text-yellow-400 animate-pulse">
                                     {winnerMessage}
                                 </div>
                             </div>
@@ -431,10 +492,10 @@
                     {/* Top Stripe - Venue and Date */}
                     <div className="bg-yellow-400 text-black py-3 px-6">
                         <div className="flex justify-between items-center">
-                            <div className="font-bold" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.5rem)' }}>
+                            <div className="venue-text font-bold">
                                 Palestra "R. Barion"
                             </div>
-                            <div className="font-semibold" style={{ fontSize: 'clamp(0.875rem, 1.2vw, 1.25rem)' }}>
+                            <div className="date-text font-semibold">
                                 {getCurrentDate()}
                             </div>
                         </div>
@@ -457,23 +518,23 @@
                         <div className="w-40 bg-yellow-400 flex flex-col relative">
                             {/* Current Set Indicator - At Top */}
                             <div className="py-6 text-center border-b-2 border-black">
-                                <div className="text-black font-bold mb-2" style={{ fontSize: 'clamp(1.5rem, 2.25vw, 2.25rem)' }}>
+                                <div className="current-set-label text-black font-bold mb-2">
                                     SET
                                 </div>
-                                <div className="text-black font-bold" style={{ fontSize: 'clamp(4.5rem, 7.5vw, 9rem)' }}>
+                                <div className="current-set-number text-black font-bold">
                                     {getCurrentSet()}
                                 </div>
                             </div>
 
                             {/* Sets Won Display */}
                             <div className="py-4 text-center border-b-2 border-black">
-                                <div className="text-black font-bold mb-2" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.5rem)' }}>
+                                <div className="sets-label text-black font-bold mb-2">
                                     SET
                                 </div>
                                 <div className="flex justify-center items-center gap-4">
-                                    <div className="text-black font-bold text-5xl">{teamData.left.sets}</div>
+                                    <div className="sets-number text-black font-bold">{teamData.left.sets}</div>
                                     <div className="text-black font-bold text-2xl">-</div>
-                                    <div className="text-black font-bold text-5xl">{teamData.right.sets}</div>
+                                    <div className="sets-number text-black font-bold">{teamData.right.sets}</div>
                                 </div>
                             </div>
 
