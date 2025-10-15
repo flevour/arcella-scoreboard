@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcella Volley Scoreboard</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        .animate-fall {
+            animation: fall linear forwards;
+        }
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .overflow-y-auto::-webkit-scrollbar {
+            display: none;
+        }
+        /* Prevent text selection on double-click and drag */
+        body {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Lucide Icons (simplified versions)
+        const Menu = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        );
+
+        const RotateCw = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+        );
+
+        const Flag = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                <line x1="4" y1="22" x2="4" y2="15"></line>
+            </svg>
+        );
+
+        const Edit = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+        );
+
+        function VolleyScoreboard() {
+            const [leftTeam, setLeftTeam] = useState({
+                name: 'Arcella Volley',
+                score: 0,
+                sets: 0,
+                timeouts: 0,
+                logo: 'https://www.arcellavolley.it/file/2014/05/Loghi-in-alto_051.png'
+            });
+
+            const [rightTeam, setRightTeam] = useState({
+                name: 'Squadra Ospite',
+                score: 0,
+                sets: 0,
+                timeouts: 0,
+                logo: ''
+            });
+
+            const [pointHistory, setPointHistory] = useState([]);
+            const [menuOpen, setMenuOpen] = useState(false);
+            const [manualEditMode, setManualEditMode] = useState(false);
+            const [showConfetti, setShowConfetti] = useState(false);
+            const [winnerMessage, setWinnerMessage] = useState('');
+            const pointHistoryRef = React.useRef(null);
+
+            const maxTimeouts = 2;
+
+            // Load from localStorage on mount
+            useEffect(() => {
+                const saved = localStorage.getItem('volleyScoreboard');
+                if (saved) {
+                    try {
+                        const data = JSON.parse(saved);
+                        // Merge saved data with defaults to ensure logo field exists
+                        setLeftTeam({
+                            name: data.leftTeam.name || 'Arcella Volley',
+                            score: data.leftTeam.score || 0,
+                            sets: data.leftTeam.sets || 0,
+                            timeouts: data.leftTeam.timeouts || 0,
+                            logo: data.leftTeam.logo !== undefined ? data.leftTeam.logo : (data.leftTeam.name === 'Arcella Volley' ? 'https://www.arcellavolley.it/file/2014/05/Loghi-in-alto_051.png' : '')
+                        });
+                        setRightTeam({
+                            name: data.rightTeam.name || 'Squadra Ospite',
+                            score: data.rightTeam.score || 0,
+                            sets: data.rightTeam.sets || 0,
+                            timeouts: data.rightTeam.timeouts || 0,
+                            logo: data.rightTeam.logo !== undefined ? data.rightTeam.logo : (data.rightTeam.name === 'Arcella Volley' ? 'https://www.arcellavolley.it/file/2014/05/Loghi-in-alto_051.png' : '')
+                        });
+                        setPointHistory(data.pointHistory || []);
+                    } catch (e) {
+                        console.error('Error loading saved data:', e);
+                    }
+                }
+            }, []);
+
+            // Save to localStorage whenever state changes
+            useEffect(() => {
+                const data = {
+                    leftTeam,
+                    rightTeam,
+                    pointHistory
+                };
+                localStorage.setItem('volleyScoreboard', JSON.stringify(data));
+            }, [leftTeam, rightTeam, pointHistory]);
+
+            // Auto-scroll to top when new points are added
+            useEffect(() => {
+                if (pointHistoryRef.current) {
+                    pointHistoryRef.current.scrollTop = 0;
+                }
+            }, [pointHistory.length]);
+
+            const updateScore = (team, delta) => {
+                if (team === 'left') {
+                    const newScore = Math.max(0, leftTeam.score + delta);
+                    
+                    if (delta > 0) {
+                        setPointHistory([...pointHistory, { team: 'left', leftScore: newScore, rightScore: rightTeam.score }]);
+                    } else if (delta < 0 && pointHistory.length > 0) {
+                        setPointHistory(pointHistory.slice(0, -1));
+                    }
+                    
+                    setLeftTeam({ ...leftTeam, score: newScore });
+                } else {
+                    const newScore = Math.max(0, rightTeam.score + delta);
+                    
+                    if (delta > 0) {
+                        setPointHistory([...pointHistory, { team: 'right', leftScore: leftTeam.score, rightScore: newScore }]);
+                    } else if (delta < 0 && pointHistory.length > 0) {
+                        setPointHistory(pointHistory.slice(0, -1));
+                    }
+                    
+                    setRightTeam({ ...rightTeam, score: newScore });
+                }
+            };
+
+            const updateSets = (team, delta) => {
+                if (team === 'left') {
+                    const newSets = Math.max(0, leftTeam.sets + delta);
+                    setLeftTeam({ ...leftTeam, sets: newSets });
+                } else {
+                    const newSets = Math.max(0, rightTeam.sets + delta);
+                    setRightTeam({ ...rightTeam, sets: newSets });
+                }
+            };
+
+            const updateTimeouts = (team, delta) => {
+                if (team === 'left') {
+                    const newTimeouts = Math.max(0, Math.min(maxTimeouts, leftTeam.timeouts + delta));
+                    setLeftTeam({ ...leftTeam, timeouts: newTimeouts });
+                } else {
+                    const newTimeouts = Math.max(0, Math.min(maxTimeouts, rightTeam.timeouts + delta));
+                    setRightTeam({ ...rightTeam, timeouts: newTimeouts });
+                }
+            };
+
+            const changeName = (team) => {
+                const newName = prompt(`Inserisci il nome della squadra:`, team === 'left' ? leftTeam.name : rightTeam.name);
+                if (newName && newName.trim()) {
+                    if (team === 'left') {
+                        setLeftTeam({ ...leftTeam, name: newName.trim() });
+                    } else {
+                        setRightTeam({ ...rightTeam, name: newName.trim() });
+                    }
+                }
+            };
+
+            const changeLogo = (team) => {
+                const currentLogo = team === 'left' ? leftTeam.logo : rightTeam.logo;
+                const newLogo = prompt(`Inserisci l'URL del logo:`, currentLogo);
+                if (newLogo !== null) {
+                    if (team === 'left') {
+                        setLeftTeam({ ...leftTeam, logo: newLogo.trim() });
+                    } else {
+                        setRightTeam({ ...rightTeam, logo: newLogo.trim() });
+                    }
+                }
+            };
+
+            const switchSides = () => {
+                const tempTeam = { ...leftTeam };
+                setLeftTeam({ ...rightTeam });
+                setRightTeam({ ...tempTeam });
+                setMenuOpen(false);
+            };
+
+            const endSet = () => {
+                const winner = leftTeam.score > rightTeam.score ? 'left' : 'right';
+                const winnerName = winner === 'left' ? leftTeam.name : rightTeam.name;
+
+                if (leftTeam.score === rightTeam.score) {
+                    alert('Il punteggio è pari! Non è possibile terminare il set.');
+                    return;
+                }
+
+                setWinnerMessage(`${winnerName} ha vinto il set!`);
+                setShowConfetti(true);
+
+                setTimeout(() => {
+                    // Increment set count for winner, reset scores and timeouts for both teams
+                    if (winner === 'left') {
+                        const updatedLeftTeam = { ...leftTeam, sets: leftTeam.sets + 1, score: 0, timeouts: 0 };
+                        const updatedRightTeam = { ...rightTeam, score: 0, timeouts: 0 };
+                        // Switch sides
+                        setLeftTeam(updatedRightTeam);
+                        setRightTeam(updatedLeftTeam);
+                    } else {
+                        const updatedLeftTeam = { ...leftTeam, score: 0, timeouts: 0 };
+                        const updatedRightTeam = { ...rightTeam, sets: rightTeam.sets + 1, score: 0, timeouts: 0 };
+                        // Switch sides
+                        setLeftTeam(updatedRightTeam);
+                        setRightTeam(updatedLeftTeam);
+                    }
+                    setPointHistory([]);
+
+                    setTimeout(() => {
+                        setShowConfetti(false);
+                        setWinnerMessage('');
+                    }, 500);
+                }, 3000);
+
+                setMenuOpen(false);
+            };
+
+            const resetSet = () => {
+                if (confirm('Sei sicuro di voler resettare il set corrente?')) {
+                    setLeftTeam({ ...leftTeam, score: 0, timeouts: 0 });
+                    setRightTeam({ ...rightTeam, score: 0, timeouts: 0 });
+                    setPointHistory([]);
+                    setMenuOpen(false);
+                }
+            };
+
+            const resetMatch = () => {
+                if (confirm('Sei sicuro di voler resettare la partita?')) {
+                    setLeftTeam({
+                        name: 'Arcella Volley',
+                        score: 0,
+                        sets: 0,
+                        timeouts: 0,
+                        logo: 'https://www.arcellavolley.it/file/2014/05/Loghi-in-alto_051.png'
+                    });
+                    setRightTeam({
+                        name: 'Squadra Ospite',
+                        score: 0,
+                        sets: 0,
+                        timeouts: 0,
+                        logo: ''
+                    });
+                    setPointHistory([]);
+                    setMenuOpen(false);
+                }
+            };
+
+            const toggleManualEdit = () => {
+                setManualEditMode(!manualEditMode);
+                setMenuOpen(false);
+            };
+
+            const getPartialScores = () => {
+                const partials = [{ index: -1, leftScore: 0, rightScore: 0 }];
+                pointHistory.forEach((point, index) => {
+                    const totalPoints = point.leftScore + point.rightScore;
+                    if (totalPoints > 0 && totalPoints % 5 === 0) {
+                        partials.push({ index, leftScore: point.leftScore, rightScore: point.rightScore });
+                    }
+                });
+                return partials;
+            };
+
+            return (
+                <div className="min-h-screen bg-black text-white flex flex-col relative">
+                    {/* Confetti Overlay */}
+                    {showConfetti && (
+                        <div className="fixed inset-0 z-50 pointer-events-none overflow-hidden">
+                            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                                <div className="text-6xl font-bold text-yellow-400 animate-pulse">
+                                    {winnerMessage}
+                                </div>
+                            </div>
+                            {[...Array(50)].map((_, i) => (
+                                <div
+                                    key={i}
+                                    className="absolute animate-fall"
+                                    style={{
+                                        left: `${Math.random() * 100}%`,
+                                        top: `-20px`,
+                                        animationDelay: `${Math.random() * 0.5}s`,
+                                        animationDuration: `${2 + Math.random() * 2}s`
+                                    }}
+                                >
+                                    <div
+                                        className={`w-3 h-3 ${
+                                            Math.random() > 0.5 ? 'bg-yellow-400' : 'bg-white'
+                                        } rounded-full`}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Main Scoreboard */}
+                    <div className="flex-1 flex">
+                        {/* Left Team */}
+                        <div className="flex-1 bg-white text-black flex flex-col">
+                            <div className="p-6">
+                                <div
+                                    className="cursor-pointer hover:bg-gray-100 transition p-2 rounded"
+                                    onClick={() => changeName('left')}
+                                >
+                                    <h2 className="font-bold text-center uppercase" style={{ fontSize: 'clamp(1.5rem, 2.5vw, 3rem)' }}>{leftTeam.name}</h2>
+                                </div>
+                                {(pointHistory.length > 0 || leftTeam.sets > 0 || rightTeam.sets > 0) ? (
+                                    <div className="flex justify-center mt-4">
+                                        {leftTeam.logo ? (
+                                            <img
+                                                src={leftTeam.logo}
+                                                alt={`${leftTeam.name} Logo`}
+                                                style={{ height: 'clamp(6rem, 12vh, 14rem)' }}
+                                                className="object-contain"
+                                            />
+                                        ) : (
+                                            <div style={{ height: 'clamp(6rem, 12vh, 14rem)', width: 'clamp(9rem, 18vh, 21rem)' }}></div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div
+                                        className="flex justify-center mt-4 cursor-pointer"
+                                        onClick={() => changeLogo('left')}
+                                    >
+                                        {leftTeam.logo ? (
+                                            <img
+                                                src={leftTeam.logo}
+                                                alt={`${leftTeam.name} Logo`}
+                                                style={{ height: 'clamp(6rem, 12vh, 14rem)' }}
+                                                className="object-contain hover:opacity-70 transition"
+                                            />
+                                        ) : (
+                                            <div style={{ height: 'clamp(6rem, 12vh, 14rem)', width: 'clamp(9rem, 18vh, 21rem)' }} className="border-2 border-dashed border-gray-400 rounded flex items-center justify-center hover:border-gray-600 transition">
+                                                <span style={{ fontSize: 'clamp(0.75rem, 1vw, 1rem)' }} className="text-gray-500">+ Aggiungi logo</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                            
+                            {/* Score */}
+                            <div className="flex-1 flex items-center justify-center overflow-hidden">
+                                <div className="text-center w-full">
+                                    <div
+                                        style={{ fontSize: 'clamp(8rem, 18vw, 25rem)' }}
+                                        className="font-bold cursor-pointer hover:text-gray-700 transition leading-none"
+                                        onClick={() => updateScore('left', 1)}
+                                    >
+                                        {leftTeam.score}
+                                    </div>
+                                    <div className="flex gap-4 justify-center mt-8">
+                                        <button
+                                            onClick={() => updateScore('left', -1)}
+                                            className="bg-black text-white w-20 h-20 rounded-full text-4xl font-bold hover:bg-gray-800 transition"
+                                        >
+                                            -
+                                        </button>
+                                        <button
+                                            onClick={() => updateScore('left', 1)}
+                                            className="bg-yellow-400 text-black w-20 h-20 rounded-full text-4xl font-bold hover:bg-yellow-500 transition"
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Sets and Timeouts */}
+                            <div className="p-6 border-t-4 border-black">
+                                <div className="flex justify-around text-center">
+                                    <div>
+                                        <div className="font-semibold text-gray-600 mb-2" style={{ fontSize: 'clamp(0.75rem, 1vw, 1rem)' }}>SET VINTI</div>
+                                        {manualEditMode ? (
+                                            <div className="flex items-center gap-2 justify-center">
+                                                <button
+                                                    onClick={() => updateSets('left', -1)}
+                                                    className="bg-black text-white rounded-full font-bold hover:bg-gray-800 transition"
+                                                    style={{ width: 'clamp(2rem, 3vw, 3rem)', height: 'clamp(2rem, 3vw, 3rem)', fontSize: 'clamp(1rem, 1.5vw, 1.5rem)' }}
+                                                >
+                                                    -
+                                                </button>
+                                                <div className="font-bold" style={{ fontSize: 'clamp(1.5rem, 2.5vw, 3rem)', minWidth: 'clamp(3rem, 4vw, 4rem)' }}>{leftTeam.sets}</div>
+                                                <button
+                                                    onClick={() => updateSets('left', 1)}
+                                                    className="bg-yellow-400 text-black rounded-full font-bold hover:bg-yellow-500 transition"
+                                                    style={{ width: 'clamp(2rem, 3vw, 3rem)', height: 'clamp(2rem, 3vw, 3rem)', fontSize: 'clamp(1rem, 1.5vw, 1.5rem)' }}
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="font-bold" style={{ fontSize: 'clamp(1.5rem, 2.5vw, 3rem)' }}>{leftTeam.sets}</div>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <div className="font-semibold text-gray-600 mb-2" style={{ fontSize: 'clamp(0.75rem, 1vw, 1rem)' }}>TIMEOUT</div>
+                                        <div className="flex items-center gap-2 justify-center">
+                                            <button
+                                                onClick={() => updateTimeouts('left', -1)}
+                                                className="bg-black text-white rounded-full font-bold hover:bg-gray-800 transition"
+                                                style={{ width: 'clamp(2.5rem, 4vw, 4rem)', height: 'clamp(2.5rem, 4vw, 4rem)', fontSize: 'clamp(1.25rem, 2vw, 2rem)' }}
+                                            >
+                                                -
+                                            </button>
+                                            <div className="font-bold" style={{ fontSize: 'clamp(1.5rem, 2.5vw, 3rem)', minWidth: 'clamp(3rem, 4vw, 4rem)' }}>{leftTeam.timeouts}/{maxTimeouts}</div>
+                                            <button
+                                                onClick={() => updateTimeouts('left', 1)}
+                                                className="bg-yellow-400 text-black rounded-full font-bold hover:bg-yellow-500 transition"
+                                                style={{ width: 'clamp(2.5rem, 4vw, 4rem)', height: 'clamp(2.5rem, 4vw, 4rem)', fontSize: 'clamp(1.25rem, 2vw, 2rem)' }}
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Center Divider with Point History */}
+                        <div className="w-20 bg-yellow-400 flex flex-col relative">
+                            {/* Point History Area */}
+                            <div ref={pointHistoryRef} className="flex-1 relative overflow-y-auto overflow-x-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                                <div className="px-2 py-4 flex flex-col">
+                                    {pointHistory.length === 0 ? (
+                                        <div className="text-center text-base font-bold text-black">0-0</div>
+                                    ) : (
+                                        pointHistory.map((point, index) => {
+                                            const partials = getPartialScores();
+                                            const isPartial = partials.some(p => p.index === index);
+                                            const partial = partials.find(p => p.index === index);
+
+                                            return (
+                                                <div key={index} className="relative" style={{ height: isPartial ? '40px' : '24px' }}>
+                                                    {isPartial && partial && (
+                                                        <div className="absolute left-0 right-0 text-center text-sm font-bold text-black" style={{ top: '2px' }}>
+                                                            {partial.leftScore}-{partial.rightScore}
+                                                        </div>
+                                                    )}
+                                                    <div
+                                                        className={`w-5 h-5 rounded-full absolute ${
+                                                            point.team === 'left' ? 'bg-white left-1' : 'bg-black right-1'
+                                                        }`}
+                                                        style={{ top: isPartial ? '22px' : '4px' }}
+                                                        title={`Punto ${index + 1}: ${point.leftScore}-${point.rightScore}`}
+                                                    />
+                                                </div>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Menu Button */}
+                            <div className="relative">
+                                <button
+                                    onClick={() => setMenuOpen(!menuOpen)}
+                                    className="w-full py-4 bg-black text-yellow-400 hover:bg-gray-900 transition flex items-center justify-center"
+                                >
+                                    <Menu size={24} />
+                                </button>
+                                
+                                {menuOpen && (
+                                    <div className="absolute bottom-full left-0 right-0 bg-black border-2 border-yellow-400 shadow-lg">
+                                        <button
+                                            onClick={endSet}
+                                            className="w-full py-3 px-4 text-yellow-400 hover:bg-gray-900 transition flex items-center justify-center gap-2 border-b border-yellow-400"
+                                        >
+                                            <Flag size={18} />
+                                            <span className="text-sm">Fine Set</span>
+                                        </button>
+                                        <button
+                                            onClick={switchSides}
+                                            className="w-full py-3 px-4 text-yellow-400 hover:bg-gray-900 transition flex items-center justify-center gap-2 border-b border-yellow-400"
+                                        >
+                                            <RotateCw size={18} />
+                                            <span className="text-sm">Cambia Lato</span>
+                                        </button>
+                                        <button
+                                            onClick={toggleManualEdit}
+                                            className="w-full py-3 px-4 text-yellow-400 hover:bg-gray-900 transition flex items-center justify-center gap-2 border-b border-yellow-400"
+                                        >
+                                            <Edit size={18} />
+                                            <span className="text-sm">{manualEditMode ? 'Esci Modifica' : 'Modifica Manuale'}</span>
+                                        </button>
+                                        <button
+                                            onClick={resetSet}
+                                            className="w-full py-3 px-4 text-yellow-400 hover:bg-gray-900 transition flex items-center justify-center gap-2 border-b border-yellow-400"
+                                        >
+                                            <RotateCw size={18} />
+                                            <span className="text-sm">Reset Set</span>
+                                        </button>
+                                        <button
+                                            onClick={resetMatch}
+                                            className="w-full py-3 px-4 text-yellow-400 hover:bg-gray-900 transition flex items-center justify-center gap-2"
+                                        >
+                                            <RotateCw size={18} />
+                                            <span className="text-sm">Reset Partita</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Right Team */}
+                        <div className="flex-1 bg-black text-white flex flex-col">
+                            <div className="p-6">
+                                <div
+                                    className="cursor-pointer hover:bg-gray-900 transition p-2 rounded"
+                                    onClick={() => changeName('right')}
+                                >
+                                    <h2 className="font-bold text-center uppercase" style={{ fontSize: 'clamp(1.5rem, 2.5vw, 3rem)' }}>{rightTeam.name}</h2>
+                                </div>
+                                {(pointHistory.length > 0 || leftTeam.sets > 0 || rightTeam.sets > 0) ? (
+                                    <div className="flex justify-center mt-4">
+                                        {rightTeam.logo ? (
+                                            <img
+                                                src={rightTeam.logo}
+                                                alt={`${rightTeam.name} Logo`}
+                                                style={{ height: 'clamp(6rem, 12vh, 14rem)' }}
+                                                className="object-contain"
+                                            />
+                                        ) : (
+                                            <div style={{ height: 'clamp(6rem, 12vh, 14rem)', width: 'clamp(9rem, 18vh, 21rem)' }}></div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div
+                                        className="flex justify-center mt-4 cursor-pointer"
+                                        onClick={() => changeLogo('right')}
+                                    >
+                                        {rightTeam.logo ? (
+                                            <img
+                                                src={rightTeam.logo}
+                                                alt={`${rightTeam.name} Logo`}
+                                                style={{ height: 'clamp(6rem, 12vh, 14rem)' }}
+                                                className="object-contain hover:opacity-70 transition"
+                                            />
+                                        ) : (
+                                            <div style={{ height: 'clamp(6rem, 12vh, 14rem)', width: 'clamp(9rem, 18vh, 21rem)' }} className="border-2 border-dashed border-gray-600 rounded flex items-center justify-center hover:border-gray-400 transition">
+                                                <span style={{ fontSize: 'clamp(0.75rem, 1vw, 1rem)' }} className="text-gray-400">+ Aggiungi logo</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                            
+                            {/* Score */}
+                            <div className="flex-1 flex items-center justify-center overflow-hidden">
+                                <div className="text-center w-full">
+                                    <div
+                                        style={{ fontSize: 'clamp(8rem, 18vw, 25rem)' }}
+                                        className="font-bold cursor-pointer hover:text-gray-300 transition leading-none"
+                                        onClick={() => updateScore('right', 1)}
+                                    >
+                                        {rightTeam.score}
+                                    </div>
+                                    <div className="flex gap-4 justify-center mt-8">
+                                        <button
+                                            onClick={() => updateScore('right', -1)}
+                                            className="bg-white text-black w-20 h-20 rounded-full text-4xl font-bold hover:bg-gray-200 transition"
+                                        >
+                                            -
+                                        </button>
+                                        <button
+                                            onClick={() => updateScore('right', 1)}
+                                            className="bg-yellow-400 text-black w-20 h-20 rounded-full text-4xl font-bold hover:bg-yellow-500 transition"
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Sets and Timeouts */}
+                            <div className="p-6 border-t-4 border-yellow-400">
+                                <div className="flex justify-around text-center">
+                                    <div>
+                                        <div className="font-semibold text-gray-400 mb-2" style={{ fontSize: 'clamp(0.75rem, 1vw, 1rem)' }}>SET VINTI</div>
+                                        {manualEditMode ? (
+                                            <div className="flex items-center gap-2 justify-center">
+                                                <button
+                                                    onClick={() => updateSets('right', -1)}
+                                                    className="bg-white text-black rounded-full font-bold hover:bg-gray-200 transition"
+                                                    style={{ width: 'clamp(2rem, 3vw, 3rem)', height: 'clamp(2rem, 3vw, 3rem)', fontSize: 'clamp(1rem, 1.5vw, 1.5rem)' }}
+                                                >
+                                                    -
+                                                </button>
+                                                <div className="font-bold" style={{ fontSize: 'clamp(1.5rem, 2.5vw, 3rem)', minWidth: 'clamp(3rem, 4vw, 4rem)' }}>{rightTeam.sets}</div>
+                                                <button
+                                                    onClick={() => updateSets('right', 1)}
+                                                    className="bg-yellow-400 text-black rounded-full font-bold hover:bg-yellow-500 transition"
+                                                    style={{ width: 'clamp(2rem, 3vw, 3rem)', height: 'clamp(2rem, 3vw, 3rem)', fontSize: 'clamp(1rem, 1.5vw, 1.5rem)' }}
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="font-bold" style={{ fontSize: 'clamp(1.5rem, 2.5vw, 3rem)' }}>{rightTeam.sets}</div>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <div className="font-semibold text-gray-400 mb-2" style={{ fontSize: 'clamp(0.75rem, 1vw, 1rem)' }}>TIMEOUT</div>
+                                        <div className="flex items-center gap-2 justify-center">
+                                            <button
+                                                onClick={() => updateTimeouts('right', -1)}
+                                                className="bg-white text-black rounded-full font-bold hover:bg-gray-200 transition"
+                                                style={{ width: 'clamp(2.5rem, 4vw, 4rem)', height: 'clamp(2.5rem, 4vw, 4rem)', fontSize: 'clamp(1.25rem, 2vw, 2rem)' }}
+                                            >
+                                                -
+                                            </button>
+                                            <div className="font-bold" style={{ fontSize: 'clamp(1.5rem, 2.5vw, 3rem)', minWidth: 'clamp(3rem, 4vw, 4rem)' }}>{rightTeam.timeouts}/{maxTimeouts}</div>
+                                            <button
+                                                onClick={() => updateTimeouts('right', 1)}
+                                                className="bg-yellow-400 text-black rounded-full font-bold hover:bg-yellow-500 transition"
+                                                style={{ width: 'clamp(2.5rem, 4vw, 4rem)', height: 'clamp(2.5rem, 4vw, 4rem)', fontSize: 'clamp(1.25rem, 2vw, 2rem)' }}
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<VolleyScoreboard />, document.getElementById('root'));
+    </script>
+</body>
+</html>
