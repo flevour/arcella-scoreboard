@@ -336,59 +336,63 @@
                         {/* Left Team */}
                         <div className={`flex-1 ${leftBgColor} ${leftTextColor} flex flex-col`}>
                             {/* Header with Logo and Team Name */}
-                            <div className="p-6 flex items-center gap-4">
-                                {/* Logo on Left */}
-                                <div
-                                    className={matchStarted ? '' : 'cursor-pointer'}
-                                    onClick={matchStarted ? undefined : () => changeLogo('left')}
-                                >
-                                    {leftTeam.logo ? (
-                                        <img
-                                            src={leftTeam.logo}
-                                            alt={`${leftTeam.name} Logo`}
-                                            style={{ height: 'clamp(4rem, 10vh, 12rem)', width: 'clamp(4rem, 10vh, 12rem)' }}
-                                            className={`object-contain ${matchStarted ? '' : 'hover:opacity-70 transition'}`}
-                                        />
-                                    ) : (
-                                        !matchStarted && (
-                                            <div
-                                                style={{ height: 'clamp(4rem, 10vh, 12rem)', width: 'clamp(4rem, 10vh, 12rem)' }}
-                                                className="border-2 border-dashed border-gray-400 rounded flex items-center justify-center hover:border-gray-600 transition"
-                                            >
-                                                <span style={{ fontSize: 'clamp(0.65rem, 0.8vw, 0.85rem)' }} className="text-gray-500">
-                                                    + Logo
-                                                </span>
-                                            </div>
-                                        )
-                                    )}
+                            <div className="p-6 flex flex-col items-start gap-4">
+                                <div className="flex items-center gap-4 w-full">
+                                    {/* Logo on Left */}
+                                    <div
+                                        className={matchStarted ? '' : 'cursor-pointer'}
+                                        onClick={matchStarted ? undefined : () => changeLogo('left')}
+                                    >
+                                        {leftTeam.logo ? (
+                                            <img
+                                                src={leftTeam.logo}
+                                                alt={`${leftTeam.name} Logo`}
+                                                style={{ height: 'clamp(6rem, 15vh, 18rem)', width: 'clamp(6rem, 15vh, 18rem)' }}
+                                                className={`object-contain ${matchStarted ? '' : 'hover:opacity-70 transition'}`}
+                                            />
+                                        ) : (
+                                            !matchStarted && (
+                                                <div
+                                                    style={{ height: 'clamp(6rem, 15vh, 18rem)', width: 'clamp(6rem, 15vh, 18rem)' }}
+                                                    className="border-2 border-dashed border-gray-400 rounded flex items-center justify-center hover:border-gray-600 transition"
+                                                >
+                                                    <span style={{ fontSize: 'clamp(0.65rem, 0.8vw, 0.85rem)' }} className="text-gray-500">
+                                                        + Logo
+                                                    </span>
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
+
+                                    {/* Team Name */}
+                                    <div className="flex-1 text-left">
+                                        <div
+                                            className="cursor-pointer hover:opacity-70 transition p-2 rounded"
+                                            onClick={() => changeName('left')}
+                                        >
+                                            <h2 className="font-bold uppercase" style={{ fontSize: 'clamp(1.75rem, 3vw, 3.5rem)' }}>
+                                                {leftTeam.name}
+                                            </h2>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                {/* Team Name and Timeouts */}
-                                <div className="flex-1 text-left">
-                                    <div
-                                        className="cursor-pointer hover:bg-gray-100 transition p-2 rounded"
-                                        onClick={() => changeName('left')}
-                                    >
-                                        <h2 className="font-bold uppercase" style={{ fontSize: 'clamp(1.5rem, 2.5vw, 3rem)' }}>
-                                            {leftTeam.name}
-                                        </h2>
-                                    </div>
-                                    <div className="flex items-center gap-2 mt-2">
-                                        {manualEditMode && (
-                                            <button
-                                                onClick={() => updateTimeouts('left', -1)}
-                                                className={`${isLeftArcella ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'} w-8 h-8 rounded-full text-lg font-bold transition`}
-                                            >
-                                                -
-                                            </button>
-                                        )}
-                                        <div
-                                            className="font-semibold cursor-pointer hover:opacity-70 transition"
-                                            style={{ fontSize: 'clamp(0.875rem, 1.2vw, 1.25rem)' }}
-                                            onClick={() => updateTimeouts('left', 1)}
+                                {/* Timeouts below logo */}
+                                <div className="flex items-center gap-2">
+                                    {manualEditMode && (
+                                        <button
+                                            onClick={() => updateTimeouts('left', -1)}
+                                            className={`${isLeftArcella ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'} w-8 h-8 rounded-full text-lg font-bold transition`}
                                         >
-                                            Timeout: {leftTeam.timeouts}
-                                        </div>
+                                            -
+                                        </button>
+                                    )}
+                                    <div
+                                        className="cursor-pointer hover:opacity-70 transition text-center"
+                                        onClick={() => updateTimeouts('left', 1)}
+                                    >
+                                        <div className="font-bold text-xl mb-1">TIMEOUT</div>
+                                        <div className="font-bold text-3xl">{leftTeam.timeouts}</div>
                                     </div>
                                 </div>
                             </div>
@@ -412,21 +416,33 @@
                         </div>
 
                         {/* Center Divider with Menu and Current Set */}
-                        <div className="w-24 bg-yellow-400 flex flex-col relative">
-                            {/* Current Set Indicator */}
-                            <div className="flex-1 flex flex-col items-center justify-center py-4 overflow-y-auto">
-                                <div className="text-center mb-4">
-                                    <div className="text-black font-bold mb-2" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.5rem)' }}>
-                                        SET
-                                    </div>
-                                    <div className="text-black font-bold" style={{ fontSize: 'clamp(3rem, 5vw, 6rem)' }}>
-                                        {getCurrentSet()}
-                                    </div>
+                        <div className="w-40 bg-yellow-400 flex flex-col relative">
+                            {/* Current Set Indicator - At Top */}
+                            <div className="py-6 text-center border-b-2 border-black">
+                                <div className="text-black font-bold mb-1" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.5rem)' }}>
+                                    SET
                                 </div>
+                                <div className="text-black font-bold" style={{ fontSize: 'clamp(3rem, 5vw, 6rem)' }}>
+                                    {getCurrentSet()}
+                                </div>
+                            </div>
 
-                                {/* Set History Bubbles - Vertically Stacked */}
+                            {/* Sets Won Display */}
+                            <div className="py-4 text-center border-b-2 border-black">
+                                <div className="text-black font-bold mb-2" style={{ fontSize: 'clamp(1rem, 1.5vw, 1.5rem)' }}>
+                                    SETS
+                                </div>
+                                <div className="flex justify-center items-center gap-4">
+                                    <div className="text-black font-bold text-5xl">{leftTeam.sets}</div>
+                                    <div className="text-black font-bold text-2xl">-</div>
+                                    <div className="text-black font-bold text-5xl">{rightTeam.sets}</div>
+                                </div>
+                            </div>
+
+                            {/* Set History Bubbles - Vertically Stacked */}
+                            <div className="flex-1 flex flex-col items-center justify-start py-4 overflow-y-auto">
                                 {setHistory.length > 0 && (
-                                    <div className="flex flex-col gap-2 w-full px-2">
+                                    <div className="flex flex-col gap-3 w-full px-3">
                                         {setHistory.map((set, index) => {
                                             // Determine if Arcella won this set
                                             const arcellaWon = set.winnerName === 'Arcella Volley';
@@ -450,12 +466,12 @@
                                             return (
                                                 <div
                                                     key={index}
-                                                    className={`${winnerColor} rounded-lg px-2 py-1 text-center`}
+                                                    className={`${winnerColor} rounded-lg px-3 py-2 text-center`}
                                                 >
-                                                    <div className="text-xs opacity-70 mb-0.5">
+                                                    <div className="text-sm opacity-70 mb-1">
                                                         Set {index + 1}
                                                     </div>
-                                                    <div className="font-bold text-xs">
+                                                    <div className="font-bold text-lg">
                                                         {currentLeftScore}-{currentRightScore}
                                                     </div>
                                                 </div>
@@ -519,59 +535,63 @@
                         {/* Right Team */}
                         <div className={`flex-1 ${rightBgColor} ${rightTextColor} flex flex-col`}>
                             {/* Header with Team Name and Logo */}
-                            <div className="p-6 flex items-center gap-4">
-                                {/* Team Name and Timeouts */}
-                                <div className="flex-1 text-right">
-                                    <div
-                                        className="cursor-pointer hover:bg-gray-900 transition p-2 rounded"
-                                        onClick={() => changeName('right')}
-                                    >
-                                        <h2 className="font-bold uppercase" style={{ fontSize: 'clamp(1.5rem, 2.5vw, 3rem)' }}>
-                                            {rightTeam.name}
-                                        </h2>
-                                    </div>
-                                    <div className="flex items-center gap-2 mt-2 justify-end">
+                            <div className="p-6 flex flex-col items-end gap-4">
+                                <div className="flex items-center gap-4 w-full">
+                                    {/* Team Name */}
+                                    <div className="flex-1 text-right">
                                         <div
-                                            className="font-semibold cursor-pointer hover:opacity-70 transition"
-                                            style={{ fontSize: 'clamp(0.875rem, 1.2vw, 1.25rem)' }}
-                                            onClick={() => updateTimeouts('right', 1)}
+                                            className="cursor-pointer hover:opacity-70 transition p-2 rounded"
+                                            onClick={() => changeName('right')}
                                         >
-                                            Timeout: {rightTeam.timeouts}
+                                            <h2 className="font-bold uppercase" style={{ fontSize: 'clamp(1.75rem, 3vw, 3.5rem)' }}>
+                                                {rightTeam.name}
+                                            </h2>
                                         </div>
-                                        {manualEditMode && (
-                                            <button
-                                                onClick={() => updateTimeouts('right', -1)}
-                                                className={`${isLeftArcella ? 'bg-black text-white hover:bg-gray-800' : 'bg-white text-black hover:bg-gray-200'} w-8 h-8 rounded-full text-lg font-bold transition`}
-                                            >
-                                                -
-                                            </button>
+                                    </div>
+
+                                    {/* Logo on Right */}
+                                    <div
+                                        className={matchStarted ? '' : 'cursor-pointer'}
+                                        onClick={matchStarted ? undefined : () => changeLogo('right')}
+                                    >
+                                        {rightTeam.logo ? (
+                                            <img
+                                                src={rightTeam.logo}
+                                                alt={`${rightTeam.name} Logo`}
+                                                style={{ height: 'clamp(6rem, 15vh, 18rem)', width: 'clamp(6rem, 15vh, 18rem)' }}
+                                                className={`object-contain ${matchStarted ? '' : 'hover:opacity-70 transition'}`}
+                                            />
+                                        ) : (
+                                            !matchStarted && (
+                                                <div
+                                                    style={{ height: 'clamp(6rem, 15vh, 18rem)', width: 'clamp(6rem, 15vh, 18rem)' }}
+                                                    className="border-2 border-dashed border-gray-600 rounded flex items-center justify-center hover:border-gray-400 transition"
+                                                >
+                                                    <span style={{ fontSize: 'clamp(0.65rem, 0.8vw, 0.85rem)' }} className="text-gray-400">
+                                                        + Logo
+                                                    </span>
+                                                </div>
+                                            )
                                         )}
                                     </div>
                                 </div>
 
-                                {/* Logo on Right */}
-                                <div
-                                    className={matchStarted ? '' : 'cursor-pointer'}
-                                    onClick={matchStarted ? undefined : () => changeLogo('right')}
-                                >
-                                    {rightTeam.logo ? (
-                                        <img
-                                            src={rightTeam.logo}
-                                            alt={`${rightTeam.name} Logo`}
-                                            style={{ height: 'clamp(4rem, 10vh, 12rem)', width: 'clamp(4rem, 10vh, 12rem)' }}
-                                            className={`object-contain ${matchStarted ? '' : 'hover:opacity-70 transition'}`}
-                                        />
-                                    ) : (
-                                        !matchStarted && (
-                                            <div
-                                                style={{ height: 'clamp(4rem, 10vh, 12rem)', width: 'clamp(4rem, 10vh, 12rem)' }}
-                                                className="border-2 border-dashed border-gray-600 rounded flex items-center justify-center hover:border-gray-400 transition"
-                                            >
-                                                <span style={{ fontSize: 'clamp(0.65rem, 0.8vw, 0.85rem)' }} className="text-gray-400">
-                                                    + Logo
-                                                </span>
-                                            </div>
-                                        )
+                                {/* Timeouts below logo */}
+                                <div className="flex items-center gap-2">
+                                    <div
+                                        className="cursor-pointer hover:opacity-70 transition text-center"
+                                        onClick={() => updateTimeouts('right', 1)}
+                                    >
+                                        <div className="font-bold text-xl mb-1">TIMEOUT</div>
+                                        <div className="font-bold text-3xl">{rightTeam.timeouts}</div>
+                                    </div>
+                                    {manualEditMode && (
+                                        <button
+                                            onClick={() => updateTimeouts('right', -1)}
+                                            className={`${isLeftArcella ? 'bg-black text-white hover:bg-gray-800' : 'bg-white text-black hover:bg-gray-200'} w-8 h-8 rounded-full text-lg font-bold transition`}
+                                        >
+                                            -
+                                        </button>
                                     )}
                                 </div>
                             </div>
