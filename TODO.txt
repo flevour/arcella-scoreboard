@@ -1,0 +1,6 @@
+* allineare timeout (mancanza logo spagina)
+* allungare i numeri
+* palestra barion molto grande al centro
+* logo un po' pu' grande 
+* sistemo i numeri
+* eventualmente anche i set piu' grandi
