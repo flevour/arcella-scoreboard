@@ -88,14 +88,18 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            position: relative;
         }
 
         .score-display {
             font-size: min(45vw, 70vh);
-            max-width: 100%;
-            max-height: 100%;
             line-height: 0.85;
             font-stretch: condensed;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
         }
 
         /* Shrink score text when numbers get large */
