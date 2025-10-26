@@ -199,6 +199,8 @@
 
         // Display-Only Scoreboard Component (for second screen)
         function DisplayOnlyScoreboard({ teamData, setHistory, showConfetti, winnerMessage }) {
+            const [isFullscreen, setIsFullscreen] = useState(false);
+
             const getCurrentDate = () => {
                 const today = new Date();
                 const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -208,6 +210,29 @@
             const getCurrentSet = () => {
                 return teamData.left.sets + teamData.right.sets + 1;
             };
+
+            const toggleFullscreen = () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        console.error('Error attempting to enable fullscreen:', err);
+                    });
+                } else {
+                    document.exitFullscreen();
+                }
+            };
+
+            // Monitor fullscreen changes
+            useEffect(() => {
+                const handleFullscreenChange = () => {
+                    setIsFullscreen(!!document.fullscreenElement);
+                };
+
+                document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+                return () => {
+                    document.removeEventListener('fullscreenchange', handleFullscreenChange);
+                };
+            }, []);
 
             // Simplified TeamPanel without controls
             function DisplayTeamPanel({ side, team }) {
@@ -378,6 +403,18 @@
                                     </div>
                                 )}
                             </div>
+
+                            {/* Fullscreen Button - Only show when not in fullscreen */}
+                            {!isFullscreen && (
+                                <div className="p-4">
+                                    <button
+                                        onClick={toggleFullscreen}
+                                        className="w-full aspect-square bg-black text-yellow-400 hover:bg-gray-900 transition flex items-center justify-center rounded"
+                                    >
+                                        <Maximize size={32} />
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         <DisplayTeamPanel side="right" team={teamData.right} />
@@ -615,26 +652,6 @@
                 };
             }, [broadcastChannel]);
 
-            // Listen for fullscreen request (for display window)
-            useEffect(() => {
-                if (isDisplayMode) {
-                    const handleFullscreenRequest = (event) => {
-                        if (event.data.type === 'REQUEST_FULLSCREEN') {
-                            if (!document.fullscreenElement) {
-                                document.documentElement.requestFullscreen().catch(err => {
-                                    console.error('Error attempting to enable fullscreen:', err);
-                                });
-                            }
-                        }
-                    };
-
-                    window.addEventListener('message', handleFullscreenRequest);
-
-                    return () => {
-                        window.removeEventListener('message', handleFullscreenRequest);
-                    };
-                }
-            }, [isDisplayMode]);
 
             const updateScore = (team, delta) => {
                 const newScore = Math.max(0, teamData[team].score + delta);
@@ -822,15 +839,6 @@
                 setMenuOpen(false);
             };
 
-            const setDisplayFullscreen = () => {
-                if (displayWindow && !displayWindow.closed) {
-                    displayWindow.postMessage({ type: 'REQUEST_FULLSCREEN' }, '*');
-                } else {
-                    alert('Per favore apri prima la finestra del display.');
-                }
-                setMenuOpen(false);
-            };
-
             const toggleFullscreen = () => {
                 if (!document.fullscreenElement) {
                     document.documentElement.requestFullscreen().catch(err => {
@@ -1004,13 +1012,6 @@
                                         >
                                             <Monitor size={18} />
                                             <span className="text-sm">Apri Display</span>
-                                        </button>
-                                        <button
-                                            onClick={setDisplayFullscreen}
-                                            className="w-full py-3 px-4 text-yellow-400 hover:bg-gray-900 transition flex items-center justify-center gap-2 border-b border-yellow-400"
-                                        >
-                                            <Maximize size={18} />
-                                            <span className="text-sm">Display Fullscreen</span>
                                         </button>
                                         <button
                                             onClick={toggleFullscreen}
