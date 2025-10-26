@@ -189,6 +189,203 @@
             </svg>
         );
 
+        const Monitor = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+        );
+
+        // Display-Only Scoreboard Component (for second screen)
+        function DisplayOnlyScoreboard({ teamData, setHistory, showConfetti, winnerMessage }) {
+            const getCurrentDate = () => {
+                const today = new Date();
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                return today.toLocaleDateString('it-IT', options);
+            };
+
+            const getCurrentSet = () => {
+                return teamData.left.sets + teamData.right.sets + 1;
+            };
+
+            // Simplified TeamPanel without controls
+            function DisplayTeamPanel({ side, team }) {
+                const isLeft = side === 'left';
+                const flexOrderClass = isLeft ? '' : 'flex-row-reverse';
+
+                const getScoreClass = (score) => {
+                    if (score >= 100) return 'very-large';
+                    if (score >= 10) return 'large';
+                    return '';
+                };
+
+                const getTeamNameClass = (name) => {
+                    const length = name.length;
+                    if (length > 20) return 'small';
+                    if (length > 15) return 'medium';
+                    return '';
+                };
+
+                return (
+                    <div className={`team-panel flex-shrink-0 ${team.theme.bgColor} ${team.theme.textColor} flex flex-col`}>
+                        <div className={`flex ${flexOrderClass} h-full`}>
+                            <div className="flex flex-col items-center justify-between p-6 h-full">
+                                <div className="flex flex-col items-center gap-6">
+                                    {/* Logo */}
+                                    <div className="logo-container flex-shrink-0">
+                                        {team.logo ? (
+                                            <img
+                                                src={team.logo}
+                                                alt={`${team.name} Logo`}
+                                                className="logo-size object-contain"
+                                            />
+                                        ) : (
+                                            <div className="logo-size border-2 border-dashed border-gray-400 rounded flex items-center justify-center"></div>
+                                        )}
+                                    </div>
+
+                                    {/* Timeouts */}
+                                    <div className="text-center">
+                                        <div className="timeout-label font-bold">TIMEOUT</div>
+                                        <div className="timeout-number font-bold" style={{ marginTop: '-30px' }}>{team.timeouts}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Team Name and Score */}
+                            <div className="flex-1 flex flex-col py-6">
+                                <div className="text-center px-4 flex-shrink-0">
+                                    <h2 className={`team-name ${getTeamNameClass(team.name)} font-bold uppercase`}>
+                                        {team.name}
+                                    </h2>
+                                </div>
+
+                                {/* Score */}
+                                <div className="flex-1 flex items-center justify-center min-h-0 px-4">
+                                    <div className="score-container">
+                                        <div className={`score-display ${getScoreClass(team.score)} font-bold leading-none text-center`}>
+                                            {team.score}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="h-screen bg-black text-white flex flex-col relative overflow-hidden">
+                    {/* Confetti Overlay */}
+                    {showConfetti && (
+                        <div className="fixed inset-0 z-50 pointer-events-none overflow-hidden">
+                            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                                <div className="winner-message font-bold text-yellow-400 animate-pulse">
+                                    {winnerMessage}
+                                </div>
+                            </div>
+                            {[...Array(50)].map((_, i) => (
+                                <div
+                                    key={i}
+                                    className="absolute animate-fall"
+                                    style={{
+                                        left: `${Math.random() * 100}%`,
+                                        top: `-20px`,
+                                        animationDelay: `${Math.random() * 0.5}s`,
+                                        animationDuration: `${2 + Math.random() * 2}s`
+                                    }}
+                                >
+                                    <div
+                                        className={`w-3 h-3 ${
+                                            Math.random() > 0.5 ? 'bg-yellow-400' : 'bg-white'
+                                        } rounded-full`}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Top Stripe */}
+                    <div className="bg-yellow-400 text-black py-3 px-6">
+                        <div className="flex justify-between items-center">
+                            <div className="venue-text font-bold">
+                                Palestra "R. Barion"
+                            </div>
+                            <div className="date-text font-semibold">
+                                {getCurrentDate()}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Main Scoreboard */}
+                    <div className="flex-1 flex min-h-0">
+                        <DisplayTeamPanel side="left" team={teamData.left} />
+
+                        {/* Center Divider */}
+                        <div className="w-40 bg-yellow-400 flex flex-col">
+                            {/* Current Set Indicator */}
+                            <div className="py-6 text-center border-b-2 border-black">
+                                <div className="current-set-label text-black font-bold mb-2">
+                                    SET
+                                </div>
+                                <div className="current-set-number text-black font-bold">
+                                    {getCurrentSet()}
+                                </div>
+                            </div>
+
+                            {/* Sets Won Display */}
+                            <div className="py-4 text-center border-b-2 border-black">
+                                <div className="sets-label text-black font-bold">
+                                    SET
+                                </div>
+                                <div className="flex justify-center items-center gap-4">
+                                    <div className="sets-number text-black font-bold">{teamData.left.sets}</div>
+                                    <div className="text-black font-bold text-2xl">-</div>
+                                    <div className="sets-number text-black font-bold">{teamData.right.sets}</div>
+                                </div>
+                            </div>
+
+                            {/* Set History */}
+                            <div className="flex-1 flex flex-col items-center justify-start py-4 overflow-y-auto">
+                                {setHistory.length > 0 && (
+                                    <div className="flex flex-col gap-4 w-full px-4">
+                                        {setHistory.map((set, index) => {
+                                            const winnerTheme = set.winnerTheme || { bgColor: 'bg-black', textColor: 'text-white' };
+                                            const winnerColor = `${winnerTheme.bgColor} ${winnerTheme.textColor}`;
+
+                                            let currentLeftScore, currentRightScore;
+                                            if (teamData.left.name === set.leftTeamName) {
+                                                currentLeftScore = set.leftScore;
+                                                currentRightScore = set.rightScore;
+                                            } else {
+                                                currentLeftScore = set.rightScore;
+                                                currentRightScore = set.leftScore;
+                                            }
+
+                                            return (
+                                                <div
+                                                    key={index}
+                                                    className={`${winnerColor} rounded-lg px-2 py-2 text-center`}
+                                                >
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <span className="text-lg font-semibold">#{index + 1}:</span>
+                                                        <span className="font-bold text-2xl">{currentLeftScore}-{currentRightScore}</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <DisplayTeamPanel side="right" team={teamData.right} />
+                    </div>
+                </div>
+            );
+        }
+
         // Team Panel Component
         function TeamPanel({
             side,
@@ -311,6 +508,13 @@
             // Storage version - increment when breaking changes occur
             const STORAGE_VERSION = 2;
 
+            // Detect if this is the display-only window
+            const urlParams = new URLSearchParams(window.location.search);
+            const isDisplayMode = urlParams.get('display') === 'true';
+
+            // BroadcastChannel for cross-window communication
+            const [broadcastChannel] = useState(() => new BroadcastChannel('scoreboard-sync'));
+
             // Default team configurations
             const DEFAULT_LEFT_TEAM = {
                 name: 'Arcella Volley',
@@ -352,6 +556,7 @@
             const [manualEditMode, setManualEditMode] = useState(false);
             const [showConfetti, setShowConfetti] = useState(false);
             const [winnerMessage, setWinnerMessage] = useState('');
+            const [displayWindow, setDisplayWindow] = useState(null);
 
             const maxTimeouts = 2;
 
@@ -390,55 +595,114 @@
                 localStorage.setItem('volleyScoreboard', JSON.stringify(data));
             }, [teamData, setHistory]);
 
+            // Listen for broadcasts from other windows
+            useEffect(() => {
+                const handleMessage = (event) => {
+                    if (event.data.type === 'UPDATE_STATE') {
+                        setTeamData(event.data.teamData);
+                        setSetHistory(event.data.setHistory);
+                    } else if (event.data.type === 'UPDATE_CONFETTI') {
+                        setShowConfetti(event.data.showConfetti);
+                        setWinnerMessage(event.data.winnerMessage);
+                        setSetHistory(event.data.setHistory);
+                    }
+                };
+
+                broadcastChannel.addEventListener('message', handleMessage);
+
+                return () => {
+                    broadcastChannel.removeEventListener('message', handleMessage);
+                };
+            }, [broadcastChannel]);
+
+            // Listen for fullscreen request (for display window)
+            useEffect(() => {
+                if (isDisplayMode) {
+                    const handleFullscreenRequest = (event) => {
+                        if (event.data.type === 'REQUEST_FULLSCREEN') {
+                            if (!document.fullscreenElement) {
+                                document.documentElement.requestFullscreen().catch(err => {
+                                    console.error('Error attempting to enable fullscreen:', err);
+                                });
+                            }
+                        }
+                    };
+
+                    window.addEventListener('message', handleFullscreenRequest);
+
+                    return () => {
+                        window.removeEventListener('message', handleFullscreenRequest);
+                    };
+                }
+            }, [isDisplayMode]);
+
             const updateScore = (team, delta) => {
                 const newScore = Math.max(0, teamData[team].score + delta);
-                setTeamData({
+                const newData = {
                     ...teamData,
                     [team]: { ...teamData[team], score: newScore }
-                });
+                };
+                setTeamData(newData);
+                // Broadcast the change
+                broadcastChannel.postMessage({ type: 'UPDATE_STATE', teamData: newData, setHistory });
             };
 
             const updateSets = (team, delta) => {
                 const newSets = Math.max(0, teamData[team].sets + delta);
-                setTeamData({
+                const newData = {
                     ...teamData,
                     [team]: { ...teamData[team], sets: newSets }
-                });
+                };
+                setTeamData(newData);
+                // Broadcast the change
+                broadcastChannel.postMessage({ type: 'UPDATE_STATE', teamData: newData, setHistory });
             };
 
             const updateTimeouts = (team, delta) => {
                 const newTimeouts = Math.max(0, Math.min(maxTimeouts, teamData[team].timeouts + delta));
-                setTeamData({
+                const newData = {
                     ...teamData,
                     [team]: { ...teamData[team], timeouts: newTimeouts }
-                });
+                };
+                setTeamData(newData);
+                // Broadcast the change
+                broadcastChannel.postMessage({ type: 'UPDATE_STATE', teamData: newData, setHistory });
             };
 
             const changeName = (team) => {
                 const newName = prompt(`Inserisci il nome della squadra:`, teamData[team].name);
                 if (newName && newName.trim()) {
-                    setTeamData({
+                    const newData = {
                         ...teamData,
                         [team]: { ...teamData[team], name: newName.trim() }
-                    });
+                    };
+                    setTeamData(newData);
+                    // Broadcast the change
+                    broadcastChannel.postMessage({ type: 'UPDATE_STATE', teamData: newData, setHistory });
                 }
             };
 
             const changeLogo = (team) => {
                 const newLogo = prompt(`Inserisci l'URL del logo:`, teamData[team].logo);
                 if (newLogo !== null) {
-                    setTeamData({
+                    const newData = {
                         ...teamData,
                         [team]: { ...teamData[team], logo: newLogo.trim() }
-                    });
+                    };
+                    setTeamData(newData);
+                    // Broadcast the change
+                    broadcastChannel.postMessage({ type: 'UPDATE_STATE', teamData: newData, setHistory });
                 }
             };
 
             const switchSides = () => {
-                setTeamData({
+                const newData = {
                     left: teamData.right,
                     right: teamData.left
-                });
+                };
+                setTeamData(newData);
+                // Broadcast the change
+                broadcastChannel.postMessage({ type: 'UPDATE_STATE', teamData: newData, setHistory });
                 setMenuOpen(false);
             };
 
@@ -456,25 +720,44 @@
                 setShowConfetti(true);
 
                 // Save set history with team info and theme
-                setSetHistory([...setHistory, {
+                const newHistory = [...setHistory, {
                     leftScore: teamData.left.score,
                     rightScore: teamData.right.score,
                     leftTeamName: teamData.left.name,
                     rightTeamName: teamData.right.name,
                     winnerName: winnerName,
                     winnerTheme: teamData[winner].theme
-                }]);
+                }];
+                setSetHistory(newHistory);
+
+                // Broadcast confetti state
+                broadcastChannel.postMessage({
+                    type: 'UPDATE_CONFETTI',
+                    showConfetti: true,
+                    winnerMessage: `${winnerName} ha vinto il set!`,
+                    setHistory: newHistory
+                });
 
                 setTimeout(() => {
                     // Increment set count for winner, reset scores and timeouts for both teams, then switch sides
-                    setTeamData({
+                    const newData = {
                         left: { ...teamData[loser], score: 0, timeouts: 0 },
                         right: { ...teamData[winner], sets: teamData[winner].sets + 1, score: 0, timeouts: 0 }
-                    });
+                    };
+                    setTeamData(newData);
+                    // Broadcast the change
+                    broadcastChannel.postMessage({ type: 'UPDATE_STATE', teamData: newData, setHistory: newHistory });
 
                     setTimeout(() => {
                         setShowConfetti(false);
                         setWinnerMessage('');
+                        // Broadcast confetti end
+                        broadcastChannel.postMessage({
+                            type: 'UPDATE_CONFETTI',
+                            showConfetti: false,
+                            winnerMessage: '',
+                            setHistory: newHistory
+                        });
                     }, 500);
                 }, 3000);
 
@@ -483,27 +766,58 @@
 
             const resetSet = () => {
                 if (confirm('Sei sicuro di voler resettare il set corrente?')) {
-                    setTeamData({
+                    const newData = {
                         left: { ...teamData.left, score: 0, timeouts: 0 },
                         right: { ...teamData.right, score: 0, timeouts: 0 }
-                    });
+                    };
+                    setTeamData(newData);
+                    // Broadcast the change
+                    broadcastChannel.postMessage({ type: 'UPDATE_STATE', teamData: newData, setHistory });
                     setMenuOpen(false);
                 }
             };
 
             const resetMatch = () => {
                 if (confirm('Sei sicuro di voler resettare la partita?')) {
-                    setTeamData({
+                    const newData = {
                         left: DEFAULT_LEFT_TEAM,
                         right: DEFAULT_RIGHT_TEAM
-                    });
+                    };
+                    setTeamData(newData);
                     setSetHistory([]);
+                    // Broadcast the change
+                    broadcastChannel.postMessage({ type: 'UPDATE_STATE', teamData: newData, setHistory: [] });
                     setMenuOpen(false);
                 }
             };
 
             const toggleManualEdit = () => {
                 setManualEditMode(!manualEditMode);
+                setMenuOpen(false);
+            };
+
+            const openDisplayWindow = () => {
+                if (displayWindow && !displayWindow.closed) {
+                    displayWindow.focus();
+                } else {
+                    // Build the display URL - preserve protocol, host, and pathname, add display param
+                    const displayUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?display=true`;
+                    const newWindow = window.open(
+                        displayUrl,
+                        'DisplayWindow',
+                        'width=1920,height=1080'
+                    );
+                    setDisplayWindow(newWindow);
+                }
+                setMenuOpen(false);
+            };
+
+            const setDisplayFullscreen = () => {
+                if (displayWindow && !displayWindow.closed) {
+                    displayWindow.postMessage({ type: 'REQUEST_FULLSCREEN' }, '*');
+                } else {
+                    alert('Per favore apri prima la finestra del display.');
+                }
                 setMenuOpen(false);
             };
 
@@ -530,6 +844,19 @@
 
             const matchStarted = teamData.left.score > 0 || teamData.right.score > 0 || teamData.left.sets > 0 || teamData.right.sets > 0;
 
+            // Render display-only mode if URL has display=true parameter
+            if (isDisplayMode) {
+                return (
+                    <DisplayOnlyScoreboard
+                        teamData={teamData}
+                        setHistory={setHistory}
+                        showConfetti={showConfetti}
+                        winnerMessage={winnerMessage}
+                    />
+                );
+            }
+
+            // Render full control mode
             return (
                 <div className="h-screen bg-black text-white flex flex-col relative overflow-hidden">
                     {/* Confetti Overlay */}
@@ -661,6 +988,20 @@
 
                                 {menuOpen && (
                                     <div className="absolute bottom-full left-0 right-0 bg-black border-2 border-yellow-400 shadow-lg">
+                                        <button
+                                            onClick={openDisplayWindow}
+                                            className="w-full py-3 px-4 text-yellow-400 hover:bg-gray-900 transition flex items-center justify-center gap-2 border-b border-yellow-400"
+                                        >
+                                            <Monitor size={18} />
+                                            <span className="text-sm">Apri Display</span>
+                                        </button>
+                                        <button
+                                            onClick={setDisplayFullscreen}
+                                            className="w-full py-3 px-4 text-yellow-400 hover:bg-gray-900 transition flex items-center justify-center gap-2 border-b border-yellow-400"
+                                        >
+                                            <Maximize size={18} />
+                                            <span className="text-sm">Display Fullscreen</span>
+                                        </button>
                                         <button
                                             onClick={toggleFullscreen}
                                             className="w-full py-3 px-4 text-yellow-400 hover:bg-gray-900 transition flex items-center justify-center gap-2 border-b border-yellow-400"
