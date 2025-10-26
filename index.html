@@ -739,10 +739,20 @@
                 });
 
                 setTimeout(() => {
-                    // Increment set count for winner, reset scores and timeouts for both teams, then switch sides
+                    // Increment set count for winner, reset scores and timeouts for both teams
+                    // ALWAYS switch sides after each set (swap left/right regardless of winner)
+                    const updatedLeft = winner === 'left'
+                        ? { ...teamData.left, sets: teamData.left.sets + 1, score: 0, timeouts: 0 }
+                        : { ...teamData.left, score: 0, timeouts: 0 };
+
+                    const updatedRight = winner === 'right'
+                        ? { ...teamData.right, sets: teamData.right.sets + 1, score: 0, timeouts: 0 }
+                        : { ...teamData.right, score: 0, timeouts: 0 };
+
+                    // Now switch sides: left becomes right, right becomes left
                     const newData = {
-                        left: { ...teamData[loser], score: 0, timeouts: 0 },
-                        right: { ...teamData[winner], sets: teamData[winner].sets + 1, score: 0, timeouts: 0 }
+                        left: updatedRight,
+                        right: updatedLeft
                     };
                     setTeamData(newData);
                     // Broadcast the change
