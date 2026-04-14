@@ -652,7 +652,6 @@
                 };
             }, [broadcastChannel]);
 
-
             const updateScore = (team, delta) => {
                 const newScore = Math.max(0, teamData[team].score + delta);
                 const newData = {
@@ -663,6 +662,21 @@
                 // Broadcast the change
                 broadcastChannel.postMessage({ type: 'UPDATE_STATE', teamData: newData, setHistory });
             };
+
+            // Keyboard shortcuts: q = +1 left, p = +1 right
+            React.useEffect(() => {
+                if (isDisplayMode) return;
+                const handleKeyDown = (e) => {
+                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                    if (e.key === 'q' || e.key === 'Q') {
+                        updateScore('left', 1);
+                    } else if (e.key === 'p' || e.key === 'P') {
+                        updateScore('right', 1);
+                    }
+                };
+                window.addEventListener('keydown', handleKeyDown);
+                return () => window.removeEventListener('keydown', handleKeyDown);
+            });
 
             const updateSets = (team, delta) => {
                 const newSets = Math.max(0, teamData[team].sets + delta);
