@@ -186,8 +186,17 @@
             line-height: 0.85;
         }
 
+        /* Keep each score clear of the set chips straddling the center line */
+        .band-score-cell.left {
+            padding-right: 110px;
+        }
+
+        .band-score-cell.right {
+            padding-left: 110px;
+        }
+
         .band-score {
-            font-size: 760px;
+            font-size: 820px;
             line-height: 1;
             font-variant-numeric: tabular-nums;
             /* Digits sit low in the line box (room reserved for ascenders); lift them to center optically */
@@ -589,7 +598,7 @@
                             {['left', 'right'].map((side, i) => (
                                 <React.Fragment key={side}>
                                     {i === 1 && <div className="w-3 bg-yellow-400" />}
-                                    <div className={`flex-1 flex items-center justify-center overflow-hidden ${teamData[side].theme.bgColor} ${teamData[side].theme.textColor}`}>
+                                    <div className={`band-score-cell ${side} flex-1 flex items-center justify-center overflow-hidden ${teamData[side].theme.bgColor} ${teamData[side].theme.textColor}`}>
                                         <div className={`band-score ${scoreClass(teamData[side].score)} font-bold`}>
                                             {teamData[side].score}
                                         </div>
