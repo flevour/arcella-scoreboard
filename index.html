@@ -190,6 +190,8 @@
             font-size: 760px;
             line-height: 1;
             font-variant-numeric: tabular-nums;
+            /* Digits sit low in the line box (room reserved for ascenders); lift them to center optically */
+            transform: translateY(-0.06em);
         }
 
         .band-score.very-large {
@@ -205,9 +207,16 @@
             line-height: 1;
         }
 
-        .band-history-chip {
-            font-size: 60px;
+        .band-history {
+            top: 224px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .band-history-score {
+            font-size: 64px;
             line-height: 1;
+            width: 104px;
         }
 
         .band-venue {
@@ -551,8 +560,7 @@
                 const sameSides = teamData.left.name === set.leftTeamName;
                 return {
                     left: sameSides ? set.leftScore : set.rightScore,
-                    right: sameSides ? set.rightScore : set.leftScore,
-                    theme: set.winnerTheme || { bgColor: 'bg-black', textColor: 'text-white' }
+                    right: sameSides ? set.rightScore : set.leftScore
                 };
             });
 
@@ -566,7 +574,7 @@
                         className="band-stage absolute flex flex-col bg-black text-white overflow-hidden"
                         style={{ left: offsetX, top: offsetY, transform: `scale(${scale})` }}
                     >
-                        {/* Top band: teams, sets won, current set */}
+                        {/* Top band: teams, sets won */}
                         <div className="band-top flex">
                             <BandTeamHeader side="left" team={teamData.left} />
                             <div className="w-80 bg-yellow-400 text-black flex flex-col items-center justify-center font-bold">
@@ -590,20 +598,23 @@
                             ))}
                         </div>
 
-                        {/* Bottom band: timeouts and past sets */}
+                        {/* Past sets, straddling the center line */}
+                        {historyFromCurrentSides.length > 0 && (
+                            <div className="band-history absolute flex flex-col gap-4">
+                                {historyFromCurrentSides.map((set, index) => (
+                                    <div key={index} className="flex bg-yellow-400 text-black font-bold rounded-xl overflow-hidden">
+                                        <div className={`band-history-score text-center py-2 ${set.left > set.right ? '' : 'opacity-40'}`}>{set.left}</div>
+                                        <div className="w-1 bg-black opacity-20" />
+                                        <div className={`band-history-score text-center py-2 ${set.right > set.left ? '' : 'opacity-40'}`}>{set.right}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Bottom band: timeouts and venue */}
                         <div className="band-bottom bg-yellow-400 text-black flex items-center justify-between px-12">
                             <BandTimeouts side="left" team={teamData.left} maxTimeouts={maxTimeouts} />
-                            <div className="flex items-center gap-5">
-                                {historyFromCurrentSides.length > 0 ? (
-                                    historyFromCurrentSides.map((set, index) => (
-                                        <div key={index} className={`band-history-chip ${set.theme.bgColor} ${set.theme.textColor} font-bold rounded-xl px-6 py-3`}>
-                                            {set.left}-{set.right}
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="band-venue font-bold">Palestra "R. Barion"</div>
-                                )}
-                            </div>
+                            <div className="band-venue font-bold">Palestra "R. Barion"</div>
                             <BandTimeouts side="right" team={teamData.right} maxTimeouts={maxTimeouts} />
                         </div>
 
