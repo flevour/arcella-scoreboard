@@ -680,6 +680,8 @@
             onUpdateScore
         }) {
             const isLeft = side === 'left';
+            // Matches the keyboard shortcuts in VolleyScoreboard: q = left +1, p = right +1
+            const shortcutKey = isLeft ? 'Q' : 'P';
             const flexOrderClass = isLeft ? '' : 'flex-row-reverse';
 
             // Determine score size class based on score value
@@ -779,6 +781,13 @@
                                         {team.score}
                                     </div>
                                 </div>
+                            </div>
+
+                            {/* Keyboard shortcut hint */}
+                            <div className="flex-shrink-0 flex items-center justify-center gap-2 opacity-60 text-lg">
+                                <span>Premi</span>
+                                <kbd className="px-2 py-0.5 border-2 border-current rounded font-mono font-bold">{shortcutKey}</kbd>
+                                <span>per +1</span>
                             </div>
                         </div>
                     </div>
