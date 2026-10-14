@@ -145,7 +145,77 @@
         .winner-message {
             font-size: clamp(3rem, 6vw, 6rem);
         }
+
+        /* Band layout: sizes are px on a fixed 1920x1080 stage, scaled as a whole */
+        .band-stage {
+            width: 1920px;
+            height: 1080px;
+            font-family: 'Barlow Condensed', sans-serif;
+            transform-origin: top left;
+        }
+
+        .band-top, .band-bottom {
+            height: 200px;
+        }
+
+        .band-logo {
+            width: 150px;
+            height: 150px;
+        }
+
+        .band-team-name {
+            font-size: 76px;
+            line-height: 0.95;
+        }
+
+        .band-team-name.medium {
+            font-size: 64px;
+        }
+
+        .band-team-name.small {
+            font-size: 52px;
+        }
+
+        .band-set-label {
+            font-size: 48px;
+            line-height: 1;
+        }
+
+        .band-set-number {
+            font-size: 130px;
+            line-height: 0.85;
+        }
+
+        .band-score {
+            font-size: 760px;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .band-score.very-large {
+            font-size: 520px;
+        }
+
+        .band-timeout-label {
+            font-size: 52px;
+        }
+
+        .band-timeout-number {
+            font-size: 110px;
+            line-height: 1;
+        }
+
+        .band-history-chip {
+            font-size: 60px;
+            line-height: 1;
+        }
+
+        .band-venue {
+            font-size: 56px;
+        }
     </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="root"></div>
@@ -419,6 +489,150 @@
 
                         <DisplayTeamPanel side="right" team={teamData.right} />
                     </div>
+                </div>
+            );
+        }
+
+        // Band layout: broadcast-style display drawn on a fixed 1920x1080 stage
+        const STAGE_WIDTH = 1920;
+        const STAGE_HEIGHT = 1080;
+
+        function useStageScale() {
+            const compute = () => Math.min(window.innerWidth / STAGE_WIDTH, window.innerHeight / STAGE_HEIGHT);
+            const [scale, setScale] = useState(compute);
+
+            useEffect(() => {
+                const handleResize = () => setScale(compute());
+                window.addEventListener('resize', handleResize);
+                return () => window.removeEventListener('resize', handleResize);
+            }, []);
+
+            return scale;
+        }
+
+        function BandTeamHeader({ side, team }) {
+            const isLeft = side === 'left';
+            const nameClass = team.name.length > 20 ? 'small' : team.name.length > 15 ? 'medium' : '';
+
+            return (
+                <div className={`flex-1 flex items-center gap-8 px-10 ${isLeft ? '' : 'flex-row-reverse'} ${team.theme.bgColor} ${team.theme.textColor}`}>
+                    <div className="band-logo flex-shrink-0 flex items-center justify-center">
+                        {team.logo && <img src={team.logo} alt="" className="max-w-full max-h-full object-contain" />}
+                    </div>
+                    <div className={`band-team-name ${nameClass} flex-1 min-w-0 font-bold uppercase ${isLeft ? 'text-left' : 'text-right'}`}>
+                        {team.name}
+                    </div>
+                </div>
+            );
+        }
+
+        function BandTimeouts({ side, team, maxTimeouts }) {
+            return (
+                <div className={`flex items-baseline gap-6 font-bold ${side === 'left' ? '' : 'flex-row-reverse'}`}>
+                    <div className="band-timeout-label">TIMEOUT</div>
+                    <div className="band-timeout-number">{team.timeouts}/{maxTimeouts}</div>
+                </div>
+            );
+        }
+
+        function BandScoreboard({ teamData, setHistory, showConfetti, winnerMessage, maxTimeouts }) {
+            const scale = useStageScale();
+            const showDebug = new URLSearchParams(window.location.search).get('debug') === '1';
+            const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
+
+            useEffect(() => {
+                const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
+                document.addEventListener('fullscreenchange', handleFullscreenChange);
+                return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            }, []);
+
+            // Past sets are stored by the sides they were played on; show them from the current sides
+            const historyFromCurrentSides = setHistory.map(set => {
+                const sameSides = teamData.left.name === set.leftTeamName;
+                return {
+                    left: sameSides ? set.leftScore : set.rightScore,
+                    right: sameSides ? set.rightScore : set.leftScore,
+                    theme: set.winnerTheme || { bgColor: 'bg-black', textColor: 'text-white' }
+                };
+            });
+
+            const scoreClass = (score) => score >= 100 ? 'very-large' : '';
+            const offsetX = (window.innerWidth - STAGE_WIDTH * scale) / 2;
+            const offsetY = (window.innerHeight - STAGE_HEIGHT * scale) / 2;
+
+            return (
+                <div className="h-screen w-screen bg-black overflow-hidden relative">
+                    <div
+                        className="band-stage absolute flex flex-col bg-black text-white overflow-hidden"
+                        style={{ left: offsetX, top: offsetY, transform: `scale(${scale})` }}
+                    >
+                        {/* Top band: teams, sets won, current set */}
+                        <div className="band-top flex">
+                            <BandTeamHeader side="left" team={teamData.left} />
+                            <div className="w-80 bg-yellow-400 text-black flex flex-col items-center justify-center font-bold">
+                                <div className="band-set-label">SET</div>
+                                <div className="band-set-number">{teamData.left.sets} - {teamData.right.sets}</div>
+                            </div>
+                            <BandTeamHeader side="right" team={teamData.right} />
+                        </div>
+
+                        {/* Scores */}
+                        <div className="flex-1 flex min-h-0">
+                            {['left', 'right'].map((side, i) => (
+                                <React.Fragment key={side}>
+                                    {i === 1 && <div className="w-3 bg-yellow-400" />}
+                                    <div className={`flex-1 flex items-center justify-center overflow-hidden ${teamData[side].theme.bgColor} ${teamData[side].theme.textColor}`}>
+                                        <div className={`band-score ${scoreClass(teamData[side].score)} font-bold`}>
+                                            {teamData[side].score}
+                                        </div>
+                                    </div>
+                                </React.Fragment>
+                            ))}
+                        </div>
+
+                        {/* Bottom band: timeouts and past sets */}
+                        <div className="band-bottom bg-yellow-400 text-black flex items-center justify-between px-12">
+                            <BandTimeouts side="left" team={teamData.left} maxTimeouts={maxTimeouts} />
+                            <div className="flex items-center gap-5">
+                                {historyFromCurrentSides.length > 0 ? (
+                                    historyFromCurrentSides.map((set, index) => (
+                                        <div key={index} className={`band-history-chip ${set.theme.bgColor} ${set.theme.textColor} font-bold rounded-xl px-6 py-3`}>
+                                            {set.left}-{set.right}
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="band-venue font-bold">Palestra "R. Barion"</div>
+                                )}
+                            </div>
+                            <BandTimeouts side="right" team={teamData.right} maxTimeouts={maxTimeouts} />
+                        </div>
+
+                        {/* Confetti Overlay */}
+                        {showConfetti && (
+                            <div className="absolute inset-0 z-50 pointer-events-none overflow-hidden">
+                                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                                    <div className="font-bold text-yellow-400 animate-pulse" style={{ fontSize: 140 }}>
+                                        {winnerMessage}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {!isFullscreen && (
+                        <button
+                            onClick={() => document.documentElement.requestFullscreen().catch(err => console.error('Error attempting to enable fullscreen:', err))}
+                            className="absolute bottom-4 right-4 z-50 p-3 bg-black text-yellow-400 rounded opacity-50 hover:opacity-100 transition"
+                        >
+                            <Maximize size={32} />
+                        </button>
+                    )}
+
+                    {showDebug && (
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-red-600 text-white font-mono text-2xl px-4 py-2 rounded">
+                            {window.innerWidth}×{window.innerHeight} @ dpr {window.devicePixelRatio} · scale {scale.toFixed(3)}
+                        </div>
+                    )}
                 </div>
             );
         }
@@ -841,8 +1055,8 @@
                 if (displayWindow && !displayWindow.closed) {
                     displayWindow.focus();
                 } else {
-                    // Build the display URL - preserve protocol, host, and pathname, add display param
-                    const displayUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?display=true`;
+                    // Build the display URL - preserve protocol, host, pathname and current params (e.g. layout), add display param
+                    const displayUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?display=true${window.location.search.replace(/^\?/, '&')}`;
                     const newWindow = window.open(
                         displayUrl,
                         'DisplayWindow',
@@ -877,6 +1091,18 @@
             const matchStarted = teamData.left.score > 0 || teamData.right.score > 0 || teamData.left.sets > 0 || teamData.right.sets > 0;
 
             // Render display-only mode if URL has display=true parameter
+            if (isDisplayMode && urlParams.get('layout') === 'band') {
+                return (
+                    <BandScoreboard
+                        teamData={teamData}
+                        setHistory={setHistory}
+                        showConfetti={showConfetti}
+                        winnerMessage={winnerMessage}
+                        maxTimeouts={maxTimeouts}
+                    />
+                );
+            }
+
             if (isDisplayMode) {
                 return (
                     <DisplayOnlyScoreboard
