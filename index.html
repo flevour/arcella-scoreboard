@@ -230,6 +230,12 @@
 
         .band-venue {
             font-size: 56px;
+            line-height: 1.1;
+        }
+
+        .band-date {
+            font-size: 40px;
+            line-height: 1.1;
         }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -623,7 +629,12 @@
                         {/* Bottom band: timeouts and venue */}
                         <div className="band-bottom bg-yellow-400 text-black flex items-center justify-between px-12">
                             <BandTimeouts side="left" team={teamData.left} maxTimeouts={maxTimeouts} />
-                            <div className="band-venue font-bold">Palestra "R. Barion"</div>
+                            <div className="text-center">
+                                <div className="band-venue font-bold">Palestra "R. Barion"</div>
+                                <div className="band-date font-semibold">
+                                    {new Date().toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                </div>
+                            </div>
                             <BandTimeouts side="right" team={teamData.right} maxTimeouts={maxTimeouts} />
                         </div>
 
