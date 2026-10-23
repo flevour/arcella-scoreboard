@@ -517,7 +517,7 @@
             );
         }
 
-        // Band layout: broadcast-style display drawn on a fixed 1920x1080 stage
+        // Band layout (default display): broadcast-style display drawn on a fixed 1920x1080 stage
         const STAGE_WIDTH = 1920;
         const STAGE_HEIGHT = 1080;
 
@@ -1131,7 +1131,8 @@
             const matchStarted = teamData.left.score > 0 || teamData.right.score > 0 || teamData.left.sets > 0 || teamData.right.sets > 0;
 
             // Render display-only mode if URL has display=true parameter
-            if (isDisplayMode && urlParams.get('layout') === 'band') {
+            // Band is the default display layout; ?layout=classic brings back the previous one
+            if (isDisplayMode && urlParams.get('layout') !== 'classic') {
                 return (
                     <BandScoreboard
                         teamData={teamData}
