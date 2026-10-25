@@ -243,6 +243,26 @@
             font-size: calc(40px * var(--band-k));
             line-height: 1.1;
         }
+
+        /* Timeout countdown overlay: covers the scores for TIMEOUT_SECONDS after a timeout is called */
+        @keyframes timeout-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        .timeout-countdown {
+            animation: timeout-pulse 1s ease-in-out infinite;
+            line-height: 0.85;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .timeout-overlay-label { font-size: clamp(3rem, 8vh, 7rem); line-height: 1; }
+        .timeout-overlay-team { font-size: clamp(2rem, 6vh, 5rem); line-height: 1.1; }
+        .timeout-overlay-number { font-size: min(45vh, 30vw); }
+
+        .band-stage .timeout-overlay-label { font-size: 130px; }
+        .band-stage .timeout-overlay-team { font-size: 100px; }
+        .band-stage .timeout-overlay-number { font-size: 480px; }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
@@ -297,8 +317,48 @@
             </svg>
         );
 
+        const TIMEOUT_SECONDS = 30;
+
+        // Seconds left until endsAt, ticking while a timeout runs
+        function useSecondsLeft(endsAt) {
+            const compute = () => Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+            const [secondsLeft, setSecondsLeft] = useState(compute);
+
+            useEffect(() => {
+                setSecondsLeft(compute());
+                const interval = setInterval(() => setSecondsLeft(compute()), 200);
+                return () => clearInterval(interval);
+            }, [endsAt]);
+
+            return secondsLeft;
+        }
+
+        // Timeout countdown covering the scores; the parent positions it over the score area
+        function TimeoutOverlay({ activeTimeout, className = '', style, onDismiss }) {
+            const secondsLeft = useSecondsLeft(activeTimeout.endsAt);
+            if (secondsLeft <= 0) return null;
+
+            return (
+                <div className={`z-40 bg-yellow-400 text-black flex flex-col items-center justify-center font-bold ${className}`} style={style}>
+                    <div className="timeout-overlay-label uppercase">Timeout</div>
+                    <div className="timeout-overlay-team uppercase text-center px-8">{activeTimeout.teamName}</div>
+                    <div className={`timeout-countdown timeout-overlay-number ${secondsLeft <= 5 ? 'text-red-600' : ''}`}>
+                        {secondsLeft}
+                    </div>
+                    {onDismiss && (
+                        <button
+                            onClick={onDismiss}
+                            className="relative z-10 mt-4 px-6 py-3 bg-black text-yellow-400 rounded-lg text-xl hover:bg-gray-900 transition"
+                        >
+                            Termina timeout
+                        </button>
+                    )}
+                </div>
+            );
+        }
+
         // Display-Only Scoreboard Component (for second screen)
-        function DisplayOnlyScoreboard({ teamData, setHistory, showConfetti, winnerMessage }) {
+        function DisplayOnlyScoreboard({ teamData, setHistory, showConfetti, winnerMessage, activeTimeout }) {
             const [isFullscreen, setIsFullscreen] = useState(false);
 
             const getCurrentDate = () => {
@@ -444,7 +504,8 @@
                     </div>
 
                     {/* Main Scoreboard */}
-                    <div className="flex-1 flex min-h-0">
+                    <div className="flex-1 flex min-h-0 relative">
+                        {activeTimeout && <TimeoutOverlay activeTimeout={activeTimeout} className="absolute inset-0" />}
                         <DisplayTeamPanel side="left" team={teamData.left} />
 
                         {/* Center Divider */}
@@ -572,7 +633,7 @@
             );
         }
 
-        function BandScoreboard({ teamData, setHistory, showConfetti, winnerMessage, maxTimeouts }) {
+        function BandScoreboard({ teamData, setHistory, showConfetti, winnerMessage, maxTimeouts, activeTimeout }) {
             const { scale, height: stageHeight, bandK } = useStage();
             const showDebug = new URLSearchParams(window.location.search).get('debug') === '1';
             const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
@@ -637,6 +698,15 @@
                                     </div>
                                 ))}
                             </div>
+                        )}
+
+                        {/* Timeout countdown, covering the scores between the bands */}
+                        {activeTimeout && (
+                            <TimeoutOverlay
+                                activeTimeout={activeTimeout}
+                                className="absolute inset-x-0"
+                                style={{ top: 'calc(200px * var(--band-k))', bottom: 'calc(200px * var(--band-k))' }}
+                            />
                         )}
 
                         {/* Bottom band: timeouts and venue */}
@@ -861,6 +931,8 @@
             const [showConfetti, setShowConfetti] = useState(false);
             const [winnerMessage, setWinnerMessage] = useState('');
             const [displayWindow, setDisplayWindow] = useState(null);
+            // Running timeout countdown: { teamName, endsAt } or null
+            const [activeTimeout, setActiveTimeout] = useState(null);
 
             const maxTimeouts = 2;
 
@@ -883,6 +955,10 @@
                             right: { ...DEFAULT_RIGHT_TEAM, ...data.teamData.right }
                         });
                         setSetHistory(data.setHistory || []);
+                        // A display opened mid-timeout picks up the running countdown
+                        if (data.activeTimeout && data.activeTimeout.endsAt > Date.now()) {
+                            setActiveTimeout(data.activeTimeout);
+                        }
                     } catch (e) {
                         console.error('Error loading saved data:', e);
                     }
@@ -894,10 +970,18 @@
                 const data = {
                     version: STORAGE_VERSION,
                     teamData,
-                    setHistory
+                    setHistory,
+                    activeTimeout
                 };
                 localStorage.setItem('volleyScoreboard', JSON.stringify(data));
-            }, [teamData, setHistory]);
+            }, [teamData, setHistory, activeTimeout]);
+
+            // Each window clears the countdown itself when it runs out
+            useEffect(() => {
+                if (!activeTimeout) return;
+                const timer = setTimeout(() => setActiveTimeout(null), Math.max(0, activeTimeout.endsAt - Date.now()));
+                return () => clearTimeout(timer);
+            }, [activeTimeout]);
 
             // Listen for broadcasts from other windows
             useEffect(() => {
@@ -909,6 +993,8 @@
                         setShowConfetti(event.data.showConfetti);
                         setWinnerMessage(event.data.winnerMessage);
                         setSetHistory(event.data.setHistory);
+                    } else if (event.data.type === 'UPDATE_TIMEOUT') {
+                        setActiveTimeout(event.data.activeTimeout);
                     }
                 };
 
@@ -965,6 +1051,16 @@
                 setTeamData(newData);
                 // Broadcast the change
                 broadcastChannel.postMessage({ type: 'UPDATE_STATE', teamData: newData, setHistory });
+
+                // Calling a timeout starts the countdown; manual corrections (-1) do not
+                if (newTimeouts > teamData[team].timeouts) {
+                    updateActiveTimeout({ teamName: teamData[team].name, endsAt: Date.now() + TIMEOUT_SECONDS * 1000 });
+                }
+            };
+
+            const updateActiveTimeout = (newActiveTimeout) => {
+                setActiveTimeout(newActiveTimeout);
+                broadcastChannel.postMessage({ type: 'UPDATE_TIMEOUT', activeTimeout: newActiveTimeout });
             };
 
             const changeName = (team) => {
@@ -1081,6 +1177,7 @@
                     setTeamData(newData);
                     // Broadcast the change
                     broadcastChannel.postMessage({ type: 'UPDATE_STATE', teamData: newData, setHistory });
+                    updateActiveTimeout(null);
                     setMenuOpen(false);
                 }
             };
@@ -1095,6 +1192,7 @@
                     setSetHistory([]);
                     // Broadcast the change
                     broadcastChannel.postMessage({ type: 'UPDATE_STATE', teamData: newData, setHistory: [] });
+                    updateActiveTimeout(null);
                     setMenuOpen(false);
                 }
             };
@@ -1153,6 +1251,7 @@
                         showConfetti={showConfetti}
                         winnerMessage={winnerMessage}
                         maxTimeouts={maxTimeouts}
+                        activeTimeout={activeTimeout}
                     />
                 );
             }
@@ -1164,6 +1263,7 @@
                         setHistory={setHistory}
                         showConfetti={showConfetti}
                         winnerMessage={winnerMessage}
+                        activeTimeout={activeTimeout}
                     />
                 );
             }
@@ -1213,7 +1313,14 @@
                     </div>
 
                     {/* Main Scoreboard */}
-                    <div className="flex-1 flex min-h-0">
+                    <div className="flex-1 flex min-h-0 relative">
+                        {activeTimeout && (
+                            <TimeoutOverlay
+                                activeTimeout={activeTimeout}
+                                className="absolute inset-0"
+                                onDismiss={() => updateActiveTimeout(null)}
+                            />
+                        )}
                         <TeamPanel
                             side="left"
                             team={teamData.left}
