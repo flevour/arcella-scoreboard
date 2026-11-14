@@ -244,7 +244,39 @@
             line-height: 1.1;
         }
 
-        /* Timeout countdown overlay: covers the scores for TIMEOUT_SECONDS after a timeout is called */
+        /* Timeout countdown: a panel in the middle of the score area for TIMEOUT_SECONDS after a
+           timeout is called. The scores shrink and move aside so they stay visible next to it */
+        .timeout-panel {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 35vw;
+            right: 35vw;
+            transition: background-color 0.3s ease-out;
+        }
+
+        .band-stage .timeout-panel {
+            top: calc(200px * var(--band-k));
+            bottom: calc(200px * var(--band-k));
+            left: 580px;
+            right: 580px;
+        }
+
+        .score-area, .score-display, .band-score-cell, .band-score {
+            transition: padding 0.4s ease-out, font-size 0.4s ease-out;
+        }
+
+        /* Half the panel width, minus half the center divider it also covers */
+        .timeout-active .score-area.left { padding-right: calc(15vw - 5rem); }
+        .timeout-active .score-area.right { padding-left: calc(15vw - 5rem); }
+        .timeout-active .score-display { font-size: min(14vw, 45vh); }
+        .timeout-active .score-display.very-large { font-size: min(9vw, 40vh); }
+
+        .timeout-active .band-score-cell.left { padding-right: 400px; }
+        .timeout-active .band-score-cell.right { padding-left: 400px; }
+        .timeout-active .band-score { font-size: 520px; }
+        .timeout-active .band-score.very-large { font-size: 340px; }
+
         @keyframes timeout-pulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.08); }
@@ -256,15 +288,15 @@
             font-variant-numeric: tabular-nums;
         }
 
-        .timeout-overlay-label { font-size: clamp(3rem, 8vh, 7rem); line-height: 1; }
-        .timeout-overlay-team { font-size: clamp(2rem, 6vh, 5rem); line-height: 1.1; }
-        .timeout-overlay-number { font-size: min(45vh, 30vw); }
+        .timeout-overlay-label { font-size: min(8vh, 5.5vw); line-height: 1; }
+        .timeout-overlay-team { font-size: min(6vh, 3.5vw); line-height: 1.1; }
+        .timeout-overlay-number { font-size: min(45vh, 20vw); }
 
-        .band-stage .timeout-overlay-label { font-size: 130px; }
-        .band-stage .timeout-overlay-team { font-size: 100px; }
-        .band-stage .timeout-overlay-number { font-size: 480px; }
+        .band-stage .timeout-overlay-label { font-size: 120px; }
+        .band-stage .timeout-overlay-team { font-size: 72px; }
+        .band-stage .timeout-overlay-number { font-size: 420px; }
 
-        /* Last seconds of a timeout, over everything */
+        /* Last seconds of a timeout: the panel turns black and a huge number spills out of it */
         .timeout-final-number { font-size: min(90vh, 80vw); }
         .band-stage .timeout-final-number { font-size: calc(var(--stage-height) * 0.9); }
     </style>
@@ -343,7 +375,7 @@
             return (
                 <button
                     onClick={onDismiss}
-                    className="relative z-10 mt-4 px-6 py-3 bg-black text-yellow-400 rounded-lg text-xl hover:bg-gray-900 transition"
+                    className="relative z-10 mt-4 px-6 py-3 bg-black text-yellow-400 border-2 border-yellow-400 rounded-lg text-xl hover:bg-gray-900 transition pointer-events-auto"
                 >
                     Termina timeout
                 </button>
@@ -352,9 +384,10 @@
 
         const TIMEOUT_FADE_MS = 800;
 
-        // Timeout countdown covering the scores; the parent positions it over the score area.
+        // Timeout countdown panel in the middle of the score area; the parent marks that area
+        // with timeout-active so the scores make room for it.
         // Stays mounted while it fades out after the timeout ends or is dismissed
-        function TimeoutOverlay({ activeTimeout, className = '', style, onDismiss }) {
+        function TimeoutOverlay({ activeTimeout, onDismiss }) {
             const [shown, setShown] = useState(activeTimeout);
             const [leaving, setLeaving] = useState(false);
 
@@ -374,25 +407,23 @@
                 <TimeoutCountdown
                     activeTimeout={shown}
                     leaving={leaving}
-                    className={className}
-                    style={style}
                     onDismiss={leaving ? undefined : onDismiss}
                 />
             );
         }
 
-        function TimeoutCountdown({ activeTimeout, leaving, className, style, onDismiss }) {
+        function TimeoutCountdown({ activeTimeout, leaving, onDismiss }) {
             // Once time is up, keep showing 1 while the overlay fades instead of flashing 0
             const secondsLeft = Math.max(1, useSecondsLeft(activeTimeout.endsAt));
-            // Last seconds: a huge red number over the whole screen
+            // Last seconds: a huge red number, on a black panel so the scores stay untouched
             const isFinal = secondsLeft <= TIMEOUT_FINAL_SECONDS;
             const fade = { transition: `opacity ${TIMEOUT_FADE_MS}ms ease-out`, opacity: leaving ? 0 : 1 };
 
             return (
                 <>
-                <div className={`z-40 bg-yellow-400 text-black flex flex-col items-center justify-center font-bold ${className}`} style={{ ...style, ...fade }}>
-                    <div className="timeout-overlay-label uppercase">Timeout</div>
-                    <div className="timeout-overlay-team uppercase text-center px-8">{activeTimeout.teamName}</div>
+                <div className={`timeout-panel z-40 ${isFinal ? 'bg-black' : 'bg-yellow-400'} text-black flex flex-col items-center justify-center font-bold`} style={fade}>
+                    <div className={`timeout-overlay-label uppercase ${isFinal ? 'invisible' : ''}`}>Timeout</div>
+                    <div className={`timeout-overlay-team uppercase text-center px-8 ${isFinal ? 'invisible' : ''}`}>{activeTimeout.teamName}</div>
                     <div className={`timeout-countdown timeout-overlay-number ${isFinal ? 'invisible' : ''}`}>
                         {secondsLeft}
                     </div>
@@ -401,7 +432,7 @@
 
                 {/* Fixed inside the band stage means fixed to the stage, which fills the screen */}
                 {isFinal && (
-                    <div className="fixed inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center font-bold" style={{ zIndex: 60, ...fade }}>
+                    <div className="fixed inset-0 pointer-events-none flex flex-col items-center justify-center font-bold" style={{ zIndex: 60, ...fade }}>
                         <div className="timeout-countdown timeout-final-number text-red-600">{secondsLeft}</div>
                         {onDismiss && <TimeoutDismissButton onDismiss={onDismiss} />}
                     </div>
@@ -492,7 +523,7 @@
                             </div>
 
                             {/* Team Name and Score */}
-                            <div className="flex-1 flex flex-col py-6">
+                            <div className={`score-area ${side} flex-1 min-w-0 flex flex-col py-6`}>
                                 <div className="text-center px-4 flex-shrink-0">
                                     <h2 className={`team-name ${getTeamNameClass(team.name)} font-bold uppercase`}>
                                         {team.name}
@@ -557,8 +588,8 @@
                     </div>
 
                     {/* Main Scoreboard */}
-                    <div className="flex-1 flex min-h-0 relative">
-                        <TimeoutOverlay activeTimeout={activeTimeout} className="absolute inset-0" />
+                    <div className={`flex-1 flex min-h-0 relative ${activeTimeout ? 'timeout-active' : ''}`}>
+                        <TimeoutOverlay activeTimeout={activeTimeout} />
                         <DisplayTeamPanel side="left" team={teamData.left} />
 
                         {/* Center Divider */}
@@ -727,7 +758,7 @@
                         </div>
 
                         {/* Scores */}
-                        <div className="flex-1 flex min-h-0">
+                        <div className={`flex-1 flex min-h-0 ${activeTimeout ? 'timeout-active' : ''}`}>
                             {['left', 'right'].map((side, i) => (
                                 <React.Fragment key={side}>
                                     {i === 1 && <div className="w-3 bg-yellow-400" />}
@@ -753,12 +784,8 @@
                             </div>
                         )}
 
-                        {/* Timeout countdown, covering the scores between the bands */}
-                        <TimeoutOverlay
-                            activeTimeout={activeTimeout}
-                            className="absolute inset-x-0"
-                            style={{ top: 'calc(200px * var(--band-k))', bottom: 'calc(200px * var(--band-k))' }}
-                        />
+                        {/* Timeout countdown, between the scores */}
+                        <TimeoutOverlay activeTimeout={activeTimeout} />
 
                         {/* Bottom band: timeouts and venue */}
                         <div className="band-bottom bg-yellow-400 text-black flex items-center justify-between px-12">
@@ -892,7 +919,7 @@
                         </div>
 
                         {/* Column 2: Team Name and Score (larger column, closer to center) */}
-                        <div className="flex-1 flex flex-col py-6">
+                        <div className={`score-area ${side} flex-1 min-w-0 flex flex-col py-6`}>
                             {/* Team Name */}
                             <div className="text-center px-4 flex-shrink-0">
                                 <div
@@ -1364,10 +1391,9 @@
                     </div>
 
                     {/* Main Scoreboard */}
-                    <div className="flex-1 flex min-h-0 relative">
+                    <div className={`flex-1 flex min-h-0 relative ${activeTimeout ? 'timeout-active' : ''}`}>
                         <TimeoutOverlay
                             activeTimeout={activeTimeout}
-                            className="absolute inset-0"
                             onDismiss={() => updateActiveTimeout(null)}
                         />
                         <TeamPanel
